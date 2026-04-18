@@ -1,28 +1,10 @@
-"""
-ping_luma/bot.py
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Bale Messenger Bot — پایش اتصال
-
-دستورات
-  /start   — خوش‌آمد + راهنما
-  /check   — بررسی کامل (سرورها + DNS + امتیاز)
-  /quick   — پینگ سریع سرور اصلی
-  /status  — آخرین نتیجه ذخیره‌شده (حداکثر ۵ دقیقه)
-  /help    — راهنما
-
-Cache fix
-  هر نتیجه با یک timestamp ذخیره می‌شود.
-  اگر نتیجه از CACHE_TTL ثانیه قدیمی‌تر باشد،
-  /status به‌جای نمایش داده کهنه، یک بررسی تازه اجرا می‌کند.
-"""
-
 import asyncio
 import logging
-import threading
 import time
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -33,74 +15,169 @@ from telegram.request import HTTPXRequest
 
 from ping_luma import config
 from ping_luma.checker import (
-    CheckReport,
-    report_to_text,
-    run_full_check,
+    ScanReport,
+    _check_one_messenger,
+    format_messenger_detail,
+    format_scan_report,
+    run_full_scan,
     run_quick_ping,
 )
+from ping_luma.messengers import MESSENGER_BY_ID, MESSENGERS
 
-# ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     level=logging.INFO,
 )
-log = logging.getLogger("BaleBot")
+log = logging.getLogger("PingLuma")
 
-# ── TTL Cache ─────────────────────────────────────────────────────────────────
-# Stores (report, cached_at_epoch) per chat_id.
-# Entries older than config.CACHE_TTL seconds are treated as stale;
-# /status will automatically trigger a fresh check in that case.
+BOT_START_TIME: int = int(time.time())
 
-_cache: Dict[int, Tuple[CheckReport, float]] = {}
-_cache_lock = threading.Lock()
+_cooldown: Dict[int, float] = {}
+
+_last_broadcast_summary: str = ""
+
+MSG_WELCOME = (
+    "<b>پینگ‌لوما</b> — @ping_luma_bot\n\n"
+    "این ربات بررسی می‌کند که آیا پیام‌رسان‌های ایرانی از شبکه شما قابل دسترس هستند یا خیر.\n\n"
+    "━━━━━━━━━━━━━━━━━\n"
+    "/scan   — بررسی کامل (همه ۷ پیام‌رسان)\n"
+    "/quick  — پینگ سریع\n"
+    "/list   — فهرست پیام‌رسان‌های پشتیبانی‌شده\n"
+    "━━━━━━━━━━━━━━━━━\n\n"
+    "پیام‌رسان‌های بررسی‌شده: <b>بله، ایتا، روبیکا، گپ، آی‌گپ، سروش‌پلاس، شاد</b>\n\n"
+    "برای شروع یک دکمه را بزنید:"
+)
+
+MSG_SCAN_RUNNING = (
+    "در حال بررسی همه پیام‌رسان‌های ایرانی…\n"
+    "بررسی ۷ پیام‌رسان به صورت همزمان — معمولاً حدود ۱۵ ثانیه طول می‌کشد."
+)
+
+MSG_COOLDOWN = "لطفاً {secs} ثانیه صبر کنید و سپس دوباره بررسی را اجرا کنید."
+MSG_QUICK_RUNNING = "در حال پینگ سرور اصلی بله…"
+MSG_PROBING = "در حال بررسی <b>{name}</b> — لطفاً صبر کنید…"
+MSG_UNKNOWN = "پیام‌رسان ناشناخته."
+MSG_BACK_MENU = "<b>پینگ‌لوما</b> — یک گزینه را انتخاب کنید:"
+MSG_STALE_SESSION = (
+    "این نشست منقضی شده.\n"
+    "لطفاً /start بزنید تا منوی جدید باز شود."
+)
+
+MSG_QUICK_OK = (
+    "✅ <b>سرور بله از شبکه شما در دسترس است</b>\n"
+    "تأخیر: <code>{lat:.0f}ms</code>\n\n"
+    "برای بررسی همه ۷ پیام‌رسان از /scan استفاده کنید."
+)
+
+MSG_QUICK_FAIL = (
+    "❌ <b>سرور بله از شبکه شما در دسترس نیست</b>\n\n"
+    "برای گزارش کامل از /scan استفاده کنید."
+)
+
+_AVAILABILITY_LABEL = {
+    "global": "در دسترس جهانی",
+    "mixed": "دسترسی ترکیبی",
+    "iran": "مخصوص ایران",
+}
 
 
-def _get_cached(chat_id: int) -> Optional[CheckReport]:
-    """Return cached report if still fresh, else None."""
-    with _cache_lock:
-        entry = _cache.get(chat_id)
-    if entry is None:
-        return None
-    report, cached_at = entry
-    age = time.time() - cached_at
-    if age > config.CACHE_TTL:
-        log.info("Cache expired for chat %s (age=%ds)", chat_id, int(age))
-        return None
-    return report
-
-
-def _set_cached(chat_id: int, report: CheckReport) -> None:
-    with _cache_lock:
-        _cache[chat_id] = (report, time.time())
-
-# ── Keyboard ──────────────────────────────────────────────────────────────────
-
-def _kb() -> InlineKeyboardMarkup:
+def _main_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("🔍 بررسی کامل", callback_data="check"),
-            InlineKeyboardButton("⚡ پینگ سریع",  callback_data="quick"),
+            InlineKeyboardButton("بررسی کامل", callback_data="scan"),
+            InlineKeyboardButton("پینگ سریع", callback_data="quick"),
         ],
         [
-            InlineKeyboardButton("📊 آخرین نتیجه", callback_data="status"),
+            InlineKeyboardButton("فهرست پیام‌رسان‌ها", callback_data="list"),
         ],
     ])
 
-# ── Command handlers ──────────────────────────────────────────────────────────
+
+def _detail_kb() -> InlineKeyboardMarkup:
+    rows, row = [], []
+    for m in MESSENGERS:
+        row.append(InlineKeyboardButton(
+            f"{m.name_fa}", callback_data=f"detail:{m.id}"
+        ))
+        if len(row) == 2:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+    rows.append([InlineKeyboardButton("بازگشت", callback_data="back")])
+    return InlineKeyboardMarkup(rows)
+
+
+def _back_kb() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("بازگشت به منو", callback_data="back")]
+    ])
+
+
+# Rate limiting
+def _is_on_cooldown(chat_id: int) -> Tuple[bool, int]:
+    elapsed = time.time() - _cooldown.get(chat_id, 0)
+    remaining = int(config.SCAN_COOLDOWN - elapsed)
+    return remaining > 0, max(remaining, 0)
+
+
+def _mark_scan(chat_id: int) -> None:
+    _cooldown[chat_id] = time.time()
+
+
+async def _reject_stale(query) -> bool:
+    """
+    Reject an inline button press if it came from a message sent before this
+    process started. Removes the keyboard so the user cannot press it again.
+    """
+    if query.message.date.timestamp() >= BOT_START_TIME:
+        return False
+    await query.answer(MSG_STALE_SESSION, show_alert=True)
+    try:
+        await query.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    return True
+
+
+async def _do_scan(chat_id: int, reply_fn) -> None:
+    """Run a full scan and send/edit the result message."""
+    on_cd, secs = _is_on_cooldown(chat_id)
+    if on_cd:
+        await reply_fn(
+            MSG_COOLDOWN.format(secs=secs),
+            parse_mode=ParseMode.HTML,
+            reply_markup=_main_kb(),
+        )
+        return
+
+    _mark_scan(chat_id)
+    status_msg = await reply_fn(MSG_SCAN_RUNNING, parse_mode=ParseMode.HTML)
+    report: ScanReport = await asyncio.to_thread(run_full_scan)
+    await status_msg.edit_text(
+        format_scan_report(report),
+        parse_mode=ParseMode.HTML,
+        reply_markup=_main_kb(),
+    )
+
+
+async def _do_quick(reply_fn) -> None:
+    """Run a quick ping against Bale and send/edit the result message."""
+    status_msg = await reply_fn(MSG_QUICK_RUNNING, parse_mode=ParseMode.HTML)
+    reachable, latency = await asyncio.to_thread(run_quick_ping, "bale")
+    text = MSG_QUICK_OK.format(lat=latency) if reachable else MSG_QUICK_FAIL
+    await status_msg.edit_text(
+        text,
+        parse_mode=ParseMode.HTML,
+        reply_markup=_main_kb(),
+    )
+
 
 async def cmd_start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
-    text = (
-            r"👋 *به ربات بله‌چک خوش آمدید*" + "\n\n"
-                                              r"این ربات وضعیت اتصال به بله را بررسی می‌کند\." + "\n\n"
-                                                                                                 "━━━━━━━━━━━━━━━━━\n"
-                                                                                                 r"🔍 /check  — بررسی کامل \(۴ سرور \+ DNS\)" + "\n"
-                                                                                                                                               "⚡ /quick  — پینگ سریع سرور اصلی\n"
-                                                                                                                                               "📊 /status — آخرین نتیجه ذخیره‌شده\n"
-                                                                                                                                               "━━━━━━━━━━━━━━━━━\n\n"
-                                                                                                                                               "یکی از دکمه‌های زیر را انتخاب کنید:"
-    )
     await update.message.reply_text(
-        text, parse_mode="MarkdownV2", reply_markup=_kb()
+        MSG_WELCOME,
+        parse_mode=ParseMode.HTML,
+        reply_markup=_main_kb(),
     )
 
 
@@ -108,130 +185,109 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await cmd_start(update, ctx)
 
 
-async def _run_and_reply_full(chat_id: int, reply_fn) -> None:
-    """Run full check, update cache, send formatted result."""
-    msg = await reply_fn(r"⏳ در حال بررسی… لطفاً صبر کنید \(~۱۰ ثانیه\)",
-                         parse_mode="MarkdownV2")
-    report = run_full_check()
-    _set_cached(chat_id, report)
-    await msg.edit_text(
-        report_to_text(report), parse_mode="Markdown", reply_markup=_kb()
-    )
-
-
-async def cmd_check(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
-    await _run_and_reply_full(
-        update.effective_chat.id, update.message.reply_text
-    )
+async def cmd_scan(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
+    await _do_scan(update.effective_chat.id, update.message.reply_text)
 
 
 async def cmd_quick(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
-    msg = await update.message.reply_text("⚡ در حال پینگ سرور اصلی…")
-    reachable, latency = run_quick_ping()
-    if reachable:
-        text = (
-            f"✅ *سرور اصلی بله در دسترس است*\n"
-            f"📶 تأخیر: `{latency:.1f}ms`\n\n"
-            f"برای گزارش کامل از /check استفاده کنید"
-        )
-    else:
-        text = (
-            "❌ *سرور اصلی بله پاسخ نمی‌دهد*\n\n"
-            "برای اطلاعات بیشتر از /check استفاده کنید"
-        )
-    await msg.edit_text(text, parse_mode="Markdown", reply_markup=_kb())
+    await _do_quick(update.message.reply_text)
 
 
-async def cmd_status(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
+async def cmd_list(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
+    lines = ["<b>پیام‌رسان‌های ایرانی پشتیبانی‌شده</b>\n"]
+    for m in MESSENGERS:
+        avail = _AVAILABILITY_LABEL.get(m.availability, "")
+        lines.append(f"<b>{m.name}</b> ({m.name_fa})  —  {avail}")
+    lines.append("\n<i>برای بررسی جزئیات یک پیام‌رسان روی دکمه‌های زیر بزنید:</i>")
+    await update.message.reply_text(
+        "\n".join(lines),
+        parse_mode=ParseMode.HTML,
+        reply_markup=_detail_kb(),
+    )
+
+
+async def on_button(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
     chat_id = update.effective_chat.id
-    report  = _get_cached(chat_id)
 
-    if report is None:
-        # Cache empty or expired → run a fresh check automatically
-        await update.message.reply_text(
-            "🔄 نتیجه‌ای در حافظه نیست یا منقضی شده — بررسی جدید شروع می‌شود…"
-        )
-        await _run_and_reply_full(chat_id, update.message.reply_text)
+    if await _reject_stale(query):
         return
 
-    age_s  = int(time.time() - _cache[chat_id][1])
-    header = f"📊 *آخرین نتیجه* — `{age_s}` ثانیه پیش\n\n"
-    await update.message.reply_text(
-        header + report_to_text(report),
-        parse_mode="Markdown",
-        reply_markup=_kb(),
+    await query.answer()
+    data = query.data or ""
+
+    if data == "scan":
+        await _do_scan(chat_id, query.message.reply_text)
+
+    elif data == "quick":
+        await _do_quick(query.message.reply_text)
+
+    elif data == "list":
+        lines = ["<b>پیام‌رسان‌های ایرانی پشتیبانی‌شده</b>\n"]
+        for m in MESSENGERS:
+            avail = _AVAILABILITY_LABEL.get(m.availability, "")
+            lines.append(f"<b>{m.name}</b> ({m.name_fa})  —  {avail}")
+        lines.append("\n<i>برای بررسی جزئیات یک پیام‌رسان روی دکمه‌های زیر بزنید:</i>")
+        await query.message.reply_text(
+            "\n".join(lines),
+            parse_mode=ParseMode.HTML,
+            reply_markup=_detail_kb(),
         )
 
-# ── Callback handler ──────────────────────────────────────────────────────────
+    elif data.startswith("detail:"):
+        messenger_id = data.split(":", 1)[1]
+        m = MESSENGER_BY_ID.get(messenger_id)
+        if not m:
+            await query.message.reply_text(MSG_UNKNOWN, parse_mode=ParseMode.HTML)
+            return
+        status_msg = await query.message.reply_text(
+            MSG_PROBING.format(name=m.name_fa),
+            parse_mode=ParseMode.HTML,
+        )
+        result = await asyncio.to_thread(_check_one_messenger, m)
+        await status_msg.edit_text(
+            format_messenger_detail(result),
+            parse_mode=ParseMode.HTML,
+            reply_markup=_back_kb(),
+        )
 
-async def on_button(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    query   = update.callback_query
-    await query.answer()
-    chat_id = update.effective_chat.id
-
-    if query.data == "check":
-        await _run_and_reply_full(chat_id, query.message.reply_text)
-
-    elif query.data == "quick":
-        # Reuse cmd_quick logic via a lightweight shim
-        msg      = await query.message.reply_text("⚡ در حال پینگ سرور اصلی…")
-        reachable, latency = run_quick_ping()
-        if reachable:
-            text = (
-                f"✅ *سرور اصلی بله در دسترس است*\n"
-                f"📶 تأخیر: `{latency:.1f}ms`\n\n"
-                f"برای گزارش کامل از /check استفاده کنید"
-            )
-        else:
-            text = (
-                "❌ *سرور اصلی بله پاسخ نمی‌دهد*\n\n"
-                "برای اطلاعات بیشتر از /check استفاده کنید"
-            )
-        await msg.edit_text(text, parse_mode="Markdown", reply_markup=_kb())
-
-    elif query.data == "status":
-        report = _get_cached(chat_id)
-        if report is None:
-            await query.message.reply_text(
-                "🔄 نتیجه‌ای در حافظه نیست یا منقضی شده — بررسی جدید شروع می‌شود…"
-            )
-            await _run_and_reply_full(chat_id, query.message.reply_text)
-        else:
-            age_s  = int(time.time() - _cache[chat_id][1])
-            header = f"📊 *آخرین نتیجه* — `{age_s}` ثانیه پیش\n\n"
-            await query.message.reply_text(
-                header + report_to_text(report),
-                parse_mode="Markdown",
-                reply_markup=_kb(),
-                )
-
-# ── Auto-broadcast ────────────────────────────────────────────────────────────
-
-_last_status: Optional[str] = None
+    elif data == "back":
+        await query.message.reply_text(
+            MSG_BACK_MENU,
+            parse_mode=ParseMode.HTML,
+            reply_markup=_main_kb(),
+        )
 
 
 async def _broadcast(app: Application) -> None:  # type: ignore[type-arg]
-    global _last_status
-    report = run_full_check()
-    if report.overall_status == _last_status:
-        return
-    _last_status = report.overall_status
-    badge = {"ONLINE": "🟢", "DEGRADED": "🟡", "OFFLINE": "🔴"}.get(
-        report.overall_status, "⚪"
-    )
-    text = (
-        f"{badge} *وضعیت بله تغییر کرد ← {report.overall_status}*\n"
-        f"{report.summary}\n💡 {report.advice}"
-    )
-    for cid in config.ALERT_CHAT_IDS:
-        try:
-            await app.bot.send_message(cid, text, parse_mode="Markdown")
-        except Exception as exc:
-            log.warning("Alert to %s failed: %s", cid, exc)
+    """
+    Run a full scan and notify ALERT_CHAT_IDS if the status summary changed
+    since the last broadcast. Avoids flooding chats with identical reports.
+    """
+    global _last_broadcast_summary
 
-# ── Entry point ───────────────────────────────────────────────────────────────
+    report: ScanReport = await asyncio.to_thread(run_full_scan)
+    summary = f"{len(report.reachable)}/{len(report.results)}"
+
+    if summary == _last_broadcast_summary:
+        return
+    _last_broadcast_summary = summary
+
+    text = (
+            f"<b>گزارش پینگ‌لوما</b>\n"
+            f"{summary} از پیام‌رسان‌های ایرانی در حال حاضر قابل دسترس هستند.\n\n"
+            + format_scan_report(report)
+    )
+    for chat_id in config.ALERT_CHAT_IDS:
+        try:
+            await app.bot.send_message(chat_id, text, parse_mode=ParseMode.HTML)
+        except Exception as exc:
+            log.warning("Broadcast to %s failed: %s", chat_id, exc)
+
 
 def main() -> None:
+    log.info("Starting PingLuma bot — drop_pending_updates=%s", config.DROP_PENDING)
+
     request_kwargs: Dict = dict(
         connect_timeout=config.CONNECT_TIMEOUT,
         read_timeout=config.READ_TIMEOUT,
@@ -239,42 +295,38 @@ def main() -> None:
     )
     if config.PROXY_URL:
         request_kwargs["proxy"] = config.PROXY_URL
-        log.info("Proxy: %s", config.PROXY_URL)
-    else:
-        log.info("No explicit proxy — using system routing")
-
-    request = HTTPXRequest(**request_kwargs)
+        log.info("Using proxy: %s", config.PROXY_URL)
 
     app = (
         Application.builder()
         .token(config.BOT_TOKEN)
         .base_url(config.BASE_URL)
-        .request(request)
+        .request(HTTPXRequest(**request_kwargs))
         .build()
     )
 
-    app.add_handler(CommandHandler("start",  cmd_start))
-    app.add_handler(CommandHandler("help",   cmd_help))
-    app.add_handler(CommandHandler("check",  cmd_check))
-    app.add_handler(CommandHandler("quick",  cmd_quick))
-    app.add_handler(CommandHandler("status", cmd_status))
+    app.add_handler(CommandHandler("start", cmd_start))
+    app.add_handler(CommandHandler("help", cmd_help))
+    app.add_handler(CommandHandler("scan", cmd_scan))
+    app.add_handler(CommandHandler("quick", cmd_quick))
+    app.add_handler(CommandHandler("list", cmd_list))
     app.add_handler(CallbackQueryHandler(on_button))
 
     if config.AUTO_CHECK_INTERVAL > 0:
         app.job_queue.run_repeating(
             lambda _ctx: asyncio.ensure_future(_broadcast(app)),
             interval=config.AUTO_CHECK_INTERVAL * 60,
-            first=60,
+            first=120,
         )
-        log.info(
-            "Auto-check every %d min — alerts → %s",
-            config.AUTO_CHECK_INTERVAL, config.ALERT_CHAT_IDS,
-        )
+        log.info("Background broadcast every %d minutes", config.AUTO_CHECK_INTERVAL)
 
-    log.info("Starting — base: %s  cache_ttl: %ds", config.BASE_URL, config.CACHE_TTL)
-    # drop_pending_updates=False so we never miss messages sent while the bot
-    # was restarting (e.g. during a hot-reload in development).
-    app.run_polling(drop_pending_updates=False)
+    log.info(
+        "PingLuma running | base=%s | cooldown=%ds | boot_ts=%d",
+        config.BASE_URL,
+        config.SCAN_COOLDOWN,
+        BOT_START_TIME,
+    )
+    app.run_polling(drop_pending_updates=config.DROP_PENDING)
 
 
 if __name__ == "__main__":
