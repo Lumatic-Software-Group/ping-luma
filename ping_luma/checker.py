@@ -1,39 +1,18 @@
-"""
-ping_luma/checker.py
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Core connectivity engine.
-Probes all Bale endpoints, resolves DNS, validates SSL,
-measures latency, and computes a 0-100 health score.
-"""
-
 import socket
 import ssl
 import time
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
-BALE_ENDPOINTS: Dict[str, Tuple[str, int]] = {
-    "سرور API":    ("https://tapi.bale.ai", 443),
-    "وب‌اپ":       ("https://web.bale.ai",  443),
-    "CDN / رسانه": ("https://cdn.bale.ai",  443),
-    "مستندات":     ("https://dev.bale.ai",  443),
-}
+from ping_luma.messengers import MESSENGERS, Messenger
 
-BALE_DNS_HOSTS: List[str] = [
-    "tapi.bale.ai",
-    "web.bale.ai",
-    "cdn.bale.ai",
-]
-
-# ── Data classes ──────────────────────────────────────────────────────────────
 
 @dataclass
-class EndpointResult:
-    name: str
+class UrlResult:
     url: str
     reachable: bool
     latency_ms: Optional[float] = None
@@ -48,152 +27,240 @@ class DnsResult:
     resolved: bool
     ip: Optional[str] = None
     latency_ms: Optional[float] = None
-    error: Optional[str] = None
 
 
 @dataclass
-class CheckReport:
-    timestamp: str
-    overall_status: str          # "ONLINE" | "DEGRADED" | "OFFLINE"
-    score: int                   # 0–100
-    endpoints: List[EndpointResult] = field(default_factory=list)
+class MessengerResult:
+    messenger: Messenger
+    verdict: str  # "REACHABLE" | "PARTIAL" | "BLOCKED"
+    score: int  # 0–100
+    best_latency_ms: Optional[float] = None
+    url_results: List[UrlResult] = field(default_factory=list)
     dns_results: List[DnsResult] = field(default_factory=list)
-    vpn_recommended: bool = False
-    summary: str = ""
-    advice: str = ""
 
-# ── Probes ────────────────────────────────────────────────────────────────────
-
-def check_dns(host: str) -> DnsResult:
-    t0 = time.perf_counter()
-    try:
-        ip = socket.gethostbyname(host)
-        return DnsResult(
-            host=host, resolved=True, ip=ip,
-            latency_ms=round((time.perf_counter() - t0) * 1000, 1),
+    @property
+    def verdict_icon(self) -> str:
+        return {"REACHABLE": "✅", "PARTIAL": "⚠️", "BLOCKED": "❌"}.get(
+            self.verdict, "❓"
         )
-    except socket.gaierror as exc:
-        return DnsResult(host=host, resolved=False, error=str(exc))
+
+    @property
+    def verdict_label_fa(self) -> str:
+        return {
+            "REACHABLE": "در دسترس",
+            "PARTIAL": "ناپایدار",
+            "BLOCKED": "مسدود",
+        }.get(self.verdict, "نامشخص")
 
 
-def check_endpoint(name: str, url: str, timeout: int = 8) -> EndpointResult:
+@dataclass
+class ScanReport:
+    timestamp: str
+    results: List[MessengerResult] = field(default_factory=list)
+
+    @property
+    def reachable(self) -> List[MessengerResult]:
+        return [r for r in self.results if r.verdict == "REACHABLE"]
+
+    @property
+    def partial(self) -> List[MessengerResult]:
+        return [r for r in self.results if r.verdict == "PARTIAL"]
+
+    @property
+    def blocked(self) -> List[MessengerResult]:
+        return [r for r in self.results if r.verdict == "BLOCKED"]
+
+
+def _probe_url(url: str, timeout: int = 8) -> UrlResult:
+    """Perform an HTTPS GET and measure latency. HTTP 4xx/5xx counts as reachable."""
     t0 = time.perf_counter()
     try:
         ctx = ssl.create_default_context()
         req = urllib.request.Request(
-            url, headers={"User-Agent": "BaleChecker/1.0"}
+            url, headers={"User-Agent": "PingLuma/1.0 (+https://pingluma.app)"}
         )
         with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
-            return EndpointResult(
-                name=name, url=url, reachable=True,
+            return UrlResult(
+                url=url,
+                reachable=True,
                 latency_ms=round((time.perf_counter() - t0) * 1000, 1),
-                status_code=resp.status, ssl_valid=True,
+                status_code=resp.status,
+                ssl_valid=True,
             )
     except urllib.error.HTTPError as exc:
-        # 4xx/5xx still means the host is reachable
-        return EndpointResult(
-            name=name, url=url, reachable=True,
+        # Server replied with an error code — the host is reachable.
+        return UrlResult(
+            url=url,
+            reachable=True,
             latency_ms=round((time.perf_counter() - t0) * 1000, 1),
-            status_code=exc.code, ssl_valid=True,
+            status_code=exc.code,
+            ssl_valid=True,
         )
     except ssl.SSLError as exc:
-        return EndpointResult(
-            name=name, url=url, reachable=False,
-            ssl_valid=False, error=f"SSL: {exc}",
-        )
+        return UrlResult(url=url, reachable=False, ssl_valid=False,
+                         error=f"SSL: {exc}")
     except (urllib.error.URLError, socket.timeout, OSError) as exc:
-        return EndpointResult(name=name, url=url, reachable=False, error=str(exc))
-
-# ── Scoring ───────────────────────────────────────────────────────────────────
-
-def _score(endpoints: List[EndpointResult], dns: List[DnsResult]) -> int:
-    ep_pts  = sum(1 for r in endpoints if r.reachable)
-    dns_pts = sum(1 for r in dns       if r.resolved)
-    base    = round((ep_pts / max(len(endpoints), 1)) * 55
-                    + (dns_pts / max(len(dns), 1)) * 25)
-    api = next((r for r in endpoints if "API" in r.name), None)
-    bonus = 0
-    if api and api.latency_ms:
-        bonus = 20 if api.latency_ms < 400 else 10 if api.latency_ms < 800 else 0
-    return min(100, base + bonus)
+        return UrlResult(url=url, reachable=False, error=str(exc)[:120])
 
 
-def _verdict(score: int) -> Tuple[str, str, str, bool]:
-    if score >= 75:
-        return (
-            "ONLINE",
-            "✅ بله به طور کامل در دسترس است.",
-            "می‌توانید پیام بفرستید و تماس بگیرید.",
-            False,
+def _probe_dns(host: str) -> DnsResult:
+    """Resolve a hostname and measure latency."""
+    t0 = time.perf_counter()
+    try:
+        ip = socket.gethostbyname(host)
+        return DnsResult(
+            host=host,
+            resolved=True,
+            ip=ip,
+            latency_ms=round((time.perf_counter() - t0) * 1000, 1),
         )
-    elif score >= 40:
-        return (
-            "DEGRADED",
-            "⚠️ اتصال ناپایدار — برخی سرویس‌ها ممکن است کار نکنند.",
-            "برخی قابلیت‌ها مانند تماس تصویری ممکن است با مشکل مواجه شوند.",
-            True,
-        )
-    else:
-        return (
-            "OFFLINE",
-            "🔴 بله از این شبکه در دسترس نیست.",
-            "در حال حاضر اتصال به بله برقرار نشد.",
-            True,
-        )
+    except socket.gaierror:
+        return DnsResult(host=host, resolved=False)
 
-# ── Public API ────────────────────────────────────────────────────────────────
 
-def run_full_check() -> CheckReport:
-    """Run all probes synchronously and return a CheckReport."""
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    dns_results = [check_dns(h) for h in BALE_DNS_HOSTS]
-    ep_results  = [
-        check_endpoint(name, url)
-        for name, (url, _) in BALE_ENDPOINTS.items()
-    ]
-    score  = _score(ep_results, dns_results)
-    status, summary, advice, vpn_rec = _verdict(score)
-    return CheckReport(
-        timestamp=ts,
-        overall_status=status,
+def _score_messenger(
+        url_results: List[UrlResult],
+        dns_results: List[DnsResult],
+) -> Tuple[int, str]:
+    """
+    Compute a 0-100 health score and derive a verdict.
+
+    Scoring breakdown:
+      - URL reachability: up to 60 pts (proportional to success ratio)
+      - DNS resolution:   up to 30 pts (proportional to success ratio)
+      - Latency bonus:    +10 pts if best latency < 500 ms
+                          + 5 pts if best latency < 1200 ms
+    Verdict thresholds:
+      >= 70 → REACHABLE
+      30-69 → PARTIAL
+      <  30 → BLOCKED
+    """
+    ok_urls = sum(1 for r in url_results if r.reachable)
+    ok_dns = sum(1 for r in dns_results if r.resolved)
+
+    url_ratio = ok_urls / max(len(url_results), 1)
+    dns_ratio = ok_dns / max(len(dns_results), 1)
+    score = round(url_ratio * 60 + dns_ratio * 30)
+
+    latencies = [r.latency_ms for r in url_results if r.reachable and r.latency_ms]
+    if latencies:
+        best = min(latencies)
+        score += 10 if best < 500 else 5 if best < 1200 else 0
+
+    score = min(100, score)
+    verdict = (
+        "REACHABLE" if score >= 70
+        else "PARTIAL" if score >= 30
+        else "BLOCKED"
+    )
+    return score, verdict
+
+
+def _check_one_messenger(m: Messenger) -> MessengerResult:
+    """Probe all URLs and DNS hosts for a single messenger and return a result."""
+    url_results = [_probe_url(url) for url in m.probe_urls]
+    dns_results = [_probe_dns(host) for host in m.dns_hosts]
+    score, verdict = _score_messenger(url_results, dns_results)
+    latencies = [r.latency_ms for r in url_results if r.reachable and r.latency_ms]
+    return MessengerResult(
+        messenger=m,
+        verdict=verdict,
         score=score,
-        endpoints=ep_results,
+        best_latency_ms=min(latencies) if latencies else None,
+        url_results=url_results,
         dns_results=dns_results,
-        vpn_recommended=vpn_rec,
-        summary=summary,
-        advice=advice,
     )
 
 
-def run_quick_ping() -> Tuple[bool, float]:
-    """Ping only the API gateway. Returns (reachable, latency_ms)."""
-    r = check_endpoint("سرور API", "https://tapi.bale.ai", timeout=6)
-    return r.reachable, r.latency_ms or 0.0
+def run_full_scan(messengers: Optional[List[Messenger]] = None) -> ScanReport:
+    """Probe all messengers concurrently and return a consolidated report."""
+    targets = messengers or MESSENGERS
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    results: List[Optional[MessengerResult]] = [None] * len(targets)
+
+    with ThreadPoolExecutor(max_workers=len(targets)) as pool:
+        futures = {
+            pool.submit(_check_one_messenger, m): i
+            for i, m in enumerate(targets)
+        }
+        for future in as_completed(futures):
+            results[futures[future]] = future.result()
+
+    return ScanReport(timestamp=timestamp, results=results)
 
 
-def report_to_text(r: CheckReport) -> str:
-    """Format a CheckReport as a Markdown bot message (Persian)."""
-    badge = {"ONLINE": "🟢", "DEGRADED": "🟡", "OFFLINE": "🔴"}.get(
-        r.overall_status, "⚪"
-    )
+def run_quick_ping(messenger_id: str = "bale") -> Tuple[bool, float]:
+    """Probe only the first URL of a single messenger. Used for fast sanity checks."""
+    from ping_luma.messengers import MESSENGER_BY_ID
+
+    m = MESSENGER_BY_ID.get(messenger_id)
+    if not m:
+        return False, 0.0
+    result = _probe_url(m.probe_urls[0], timeout=6)
+    return result.reachable, result.latency_ms or 0.0
+
+
+_AVAILABILITY_LABEL: dict = {
+    "global": "در دسترس جهانی",
+    "mixed": "دسترسی ترکیبی",
+    "iran": "مخصوص ایران",
+}
+
+
+def format_scan_report(report: ScanReport) -> str:
+    """Format a full scan report as an HTML Telegram message."""
     lines = [
-        "*بررسی اتصال بله*",
-        f"🕐 `{r.timestamp}`",
+        "<b>نتیجه بررسی پیام‌رسان‌های ایرانی</b>",
+        f"<code>{report.timestamp}</code>",
         "",
-        f"{badge} *وضعیت: {r.overall_status}* — امتیاز {r.score}/100",
-        "",
-        "*سرورها*",
     ]
-    for ep in r.endpoints:
-        icon = "✅" if ep.reachable else "❌"
-        lat  = f" — `{ep.latency_ms}ms`" if ep.latency_ms else ""
-        lines.append(f"{icon} {ep.name}{lat}")
 
-    lines += ["", "*DNS*"]
+    for r in report.results:
+        avail = _AVAILABILITY_LABEL.get(r.messenger.availability, "")
+        lat = f"  <code>{r.best_latency_ms:.0f}ms</code>" if r.best_latency_ms else ""
+        lines.append(
+            f"{r.verdict_icon} <b>{r.messenger.name}</b> ({r.messenger.name_fa})"
+            f"  —  {r.verdict_label_fa}{lat}\n"
+            f"    {avail}  ·  امتیاز: <code>{r.score}/100</code>"
+        )
+
+    total = len(report.results)
+    reachable = len(report.reachable)
+    blocked = len(report.blocked)
+
+    lines += [
+        "",
+        "━━━━━━━━━━━━━━━━━━━",
+        f"✅ {reachable}/{total} در دسترس  ·  ❌ {blocked}/{total} مسدود",
+        "",
+        "<i>نتایج فقط بازتاب‌دهنده وضعیت شبکه شما هستند.</i>",
+    ]
+    return "\n".join(lines)
+
+
+def format_messenger_detail(r: MessengerResult) -> str:
+    """Format the detailed probe result for a single messenger as HTML."""
+    avail = _AVAILABILITY_LABEL.get(r.messenger.availability, "")
+    lines = [
+        f"{r.verdict_icon} <b>{r.messenger.name}</b> ({r.messenger.name_fa})",
+        "",
+        f"وضعیت:   <b>{r.verdict_label_fa}</b>",
+        f"امتیاز:  <code>{r.score}/100</code>",
+        f"دسترسی:  {avail}",
+    ]
+    if r.best_latency_ms:
+        lines.append(f"تأخیر:   <code>{r.best_latency_ms:.0f}ms</code>")
+
+    lines += ["", "<b>سرورها</b>"]
+    for u in r.url_results:
+        icon = "✅" if u.reachable else "❌"
+        lat = f" <code>{u.latency_ms}ms</code>" if u.latency_ms else ""
+        lines.append(f"{icon} <code>{u.url}</code>{lat}")
+
+    lines += ["", "<b>DNS</b>"]
     for d in r.dns_results:
         icon = "✅" if d.resolved else "❌"
-        ip   = f" ← `{d.ip}`" if d.ip else ""
-        lines.append(f"{icon} `{d.host}`{ip}")
+        ip = f" → <code>{d.ip}</code>" if d.ip else ""
+        lines.append(f"{icon} <code>{d.host}</code>{ip}")
 
-    lines += ["", f"📋 {r.summary}", "", f"💡 {r.advice}"]
     return "\n".join(lines)
