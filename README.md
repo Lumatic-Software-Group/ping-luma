@@ -22,7 +22,6 @@ It ships as a Telegram bot and a standalone browser dashboard.
 | Gap | گپ | Global | Cross-platform messenger |
 | iGap | آی‌گپ | Global | Feature-rich messenger with VoIP |
 | Soroush Plus | سروش‌پلاس | Mixed | IRIB state-affiliated messenger |
-| Shad | شاد | Iran-only | Ministry of Education messenger |
 
 **Availability:**
 - Global — designed for worldwide use
