@@ -32,18 +32,16 @@ class DnsResult:
 
 @dataclass
 class StunResult:
-    """Result of a raw UDP STUN Binding Request probe (RFC 5389)."""
     host: str
     port: int
-    reachable: bool  # True = got a stun binding response
+    reachable: bool
     latency_ms: Optional[float] = None
-    via_tcp: bool = False  # True if fell back to tcp
+    via_tcp: bool = False
     error: Optional[str] = None
 
 
 @dataclass
 class TurnResult:
-    """Result of a TCP connection attempt to a TURN relay host."""
     host: str
     port: int
     reachable: bool
@@ -54,22 +52,18 @@ class TurnResult:
 @dataclass
 class MessengerResult:
     messenger: Messenger
-    msg_verdict: str  # "REACHABLE" | "PARTIAL" | "BLOCKED"
-    msg_score: int  # 0–100
+    msg_verdict: str
+    msg_score: int
     best_latency_ms: Optional[float] = None
     url_results: List[UrlResult] = field(default_factory=list)
     dns_results: List[DnsResult] = field(default_factory=list)
-    call_verdict: str = "UNKNOWN"  # "REACHABLE" | "PARTIAL" | "BLOCKED" | "UNKNOWN"
-    call_score: int = 0  # 0–100
+    call_verdict: str = "UNKNOWN"
+    call_score: int = 0
     stun_results: List[StunResult] = field(default_factory=list)
     turn_result: Optional[TurnResult] = None
 
     @property
     def verdict(self) -> str:
-        """
-        Overall verdict = lower of msg and call.
-        If call_verdict is UNKNOWN (no STUN hosts defined), fall back to msg only.
-        """
         if self.call_verdict == "UNKNOWN":
             return self.msg_verdict
         order = {"BLOCKED": 0, "PARTIAL": 1, "REACHABLE": 2}
@@ -141,7 +135,6 @@ class ScanReport:
 
 
 def _probe_url(url: str, timeout: int = 8) -> UrlResult:
-    """Perform an HTTPS GET and measure latency. HTTP 4xx/5xx counts as reachable."""
     t0 = time.perf_counter()
     try:
         ctx = ssl.create_default_context()
@@ -172,14 +165,11 @@ def _probe_url(url: str, timeout: int = 8) -> UrlResult:
 
 
 def _probe_dns(host: str) -> DnsResult:
-    """Resolve a hostname and measure latency."""
     t0 = time.perf_counter()
     try:
         ip = socket.gethostbyname(host)
         return DnsResult(
-            host=host,
-            resolved=True,
-            ip=ip,
+            host=host, resolved=True, ip=ip,
             latency_ms=round((time.perf_counter() - t0) * 1000, 1),
         )
     except socket.gaierror:
@@ -188,29 +178,12 @@ def _probe_dns(host: str) -> DnsResult:
 
 _STUN_MAGIC = 0x2112A442
 _STUN_BINDING_REQUEST = struct.pack(
-    ">HHI12s",
-    0x0001,
-    0x0000,
-    _STUN_MAGIC,
-    b"\x00" * 12,
+    ">HHI12s", 0x0001, 0x0000, _STUN_MAGIC, b"\x00" * 12,
 )
-_STUN_SUCCESS_TYPE = 0x0101  # Binding Success Response
+_STUN_SUCCESS_TYPE = 0x0101
 
 
 def _probe_stun_udp(host: str, port: int = 3478, timeout: float = 4.0) -> StunResult:
-    """
-    Send a STUN Binding Request over UDP and wait for a Binding Response.
-
-    Returns reachable=True only if we receive a valid STUN success response,
-    which proves that:
-      1. The host resolves.
-      2. UDP port 3478 is open and not firewalled.
-      3. A STUN server is running and responding — i.e., WebRTC ICE will work.
-
-    Falls back to TCP if UDP times out, because some networks block UDP 3478
-    while still allowing TCP 3478 (used by TURN over TCP).
-    """
-
     t0 = time.perf_counter()
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
@@ -218,13 +191,6 @@ def _probe_stun_udp(host: str, port: int = 3478, timeout: float = 4.0) -> StunRe
             sock.sendto(_STUN_BINDING_REQUEST, (host, port))
             data, _ = sock.recvfrom(1024)
             elapsed = round((time.perf_counter() - t0) * 1000, 1)
-
-            if len(data) >= 4:
-                msg_type = struct.unpack(">H", data[:2])[0]
-                if msg_type == _STUN_SUCCESS_TYPE:
-                    return StunResult(host=host, port=port, reachable=True,
-                                      latency_ms=elapsed)
-
             return StunResult(host=host, port=port, reachable=True,
                               latency_ms=elapsed)
     except (socket.timeout, OSError):
@@ -235,26 +201,19 @@ def _probe_stun_udp(host: str, port: int = 3478, timeout: float = 4.0) -> StunRe
         with socket.create_connection((host, port), timeout=timeout) as sock:
             sock.sendall(_STUN_BINDING_REQUEST)
             try:
-                data = sock.recv(1024)
+                sock.recv(1024)
             except socket.timeout:
-                data = b""
+                pass
             elapsed = round((time.perf_counter() - t0) * 1000, 1)
 
             return StunResult(host=host, port=port, reachable=True,
                               latency_ms=elapsed, via_tcp=True)
     except (socket.timeout, OSError) as exc:
-        return StunResult(
-            host=host, port=port, reachable=False,
-            error=str(exc)[:80],
-        )
+        return StunResult(host=host, port=port, reachable=False,
+                          error=str(exc)[:80])
 
 
 def _probe_turn_tcp(host: str, port: int = 3478, timeout: float = 4.0) -> TurnResult:
-    """
-    attempting a plain TCP connection to port 3478.
-    successful tcp handshake means turn-over-TCP is viable.
-    turn-over-TLS (port 5349) is attempted if 3478 fails.
-    """
     for p in (port, 5349):
         t0 = time.perf_counter()
         try:
@@ -273,19 +232,8 @@ def _score_messaging(
         url_results: List[UrlResult],
         dns_results: List[DnsResult],
 ) -> Tuple[int, str]:
-    """
-    Original messaging scoring — unchanged from v1.
-
-    Points:
-      URL reachability  60 pts  (proportional)
-      DNS resolution    30 pts  (proportional)
-      Latency bonus     +10 if best_lat < 500 ms, +5 if < 1200 ms
-
-    Thresholds: >=70 REACHABLE, 30-69 PARTIAL, <30 BLOCKED
-    """
     ok_urls = sum(1 for r in url_results if r.reachable)
     ok_dns = sum(1 for r in dns_results if r.resolved)
-
     url_ratio = ok_urls / max(len(url_results), 1)
     dns_ratio = ok_dns / max(len(dns_results), 1)
     score = round(url_ratio * 60 + dns_ratio * 30)
@@ -333,7 +281,6 @@ def _score_calls(
 
 
 def _check_one_messenger(m: Messenger) -> MessengerResult:
-    """Probe all messaging and call endpoints for a single messenger."""
     url_results = [_probe_url(url) for url in m.probe_urls]
     dns_results = [_probe_dns(host) for host in m.dns_hosts]
     msg_score, msg_verdict = _score_messaging(url_results, dns_results)
@@ -367,16 +314,13 @@ def _check_one_messenger(m: Messenger) -> MessengerResult:
 
 
 def run_full_scan(messengers: Optional[List[Messenger]] = None) -> ScanReport:
-    """Probe all messengers concurrently and return a consolidated report."""
     targets = messengers or MESSENGERS
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     results: List[Optional[MessengerResult]] = [None] * len(targets)
 
     with ThreadPoolExecutor(max_workers=len(targets)) as pool:
-        futures = {
-            pool.submit(_check_one_messenger, m): i
-            for i, m in enumerate(targets)
-        }
+        futures = {pool.submit(_check_one_messenger, m): i
+                   for i, m in enumerate(targets)}
         for future in as_completed(futures):
             results[futures[future]] = future.result()
 
@@ -384,7 +328,6 @@ def run_full_scan(messengers: Optional[List[Messenger]] = None) -> ScanReport:
 
 
 def run_quick_ping(messenger_id: str = "bale") -> Tuple[bool, float]:
-    """Probe only the first URL of a single messenger. Used for fast sanity checks."""
     from ping_luma.messengers import MESSENGER_BY_ID
 
     m = MESSENGER_BY_ID.get(messenger_id)
@@ -410,7 +353,7 @@ _CALL_OUTSIDE_LABEL: dict = {
 
 
 def format_scan_report(report: ScanReport) -> str:
-    """Format a full scan report as an HTML Telegram message (v2 — includes call axis)."""
+    """Concise scan report for Telegram — no technical scores or server details."""
     lines = [
         "<b>نتیجه بررسی پیام‌رسان‌های ایرانی</b>",
         f"<code>{report.timestamp}</code>",
@@ -418,96 +361,55 @@ def format_scan_report(report: ScanReport) -> str:
     ]
 
     for r in report.results:
-        avail = _AVAILABILITY_LABEL.get(r.messenger.availability, "")
-        lat = f"  <code>{r.best_latency_ms:.0f}ms</code>" if r.best_latency_ms else ""
-        call_l = _CALL_OUTSIDE_LABEL.get(r.messenger.call_outside_iran, "❓ نامشخص")
-
+        call_l = _CALL_OUTSIDE_LABEL.get(r.messenger.call_outside_iran, "❓")
+        lat = (f"  <code>{r.best_latency_ms:.0f}ms</code>"
+               if r.best_latency_ms else "")
         lines.append(
             f"{r.verdict_icon} <b>{r.messenger.name}</b> ({r.messenger.name_fa})"
             f"  —  {r.verdict_label_fa}{lat}\n"
-            f"    📡 پیام: <code>{r.msg_score}/100</code>  "
-            f"📞 تماس: <code>{r.call_score}/100</code>  {r.call_verdict_icon}\n"
-            f"    {call_l}  ·  {avail}"
+            f"    📞 {call_l}"
         )
 
     total = len(report.results)
     msg_ok = len(report.reachable)
     call_ok = len(report.calls_reachable)
-    call_blk = len(report.calls_blocked)
 
     lines += [
         "",
         "━━━━━━━━━━━━━━━━━━━",
-        f"📡 پیام: {msg_ok}/{total} در دسترس",
-        f"📞 تماس: {call_ok}/{total} قابل برقراری  ·  ❌ {call_blk}/{total} مسدود",
+        f"💬 پیام: {msg_ok}/{total} در دسترس",
+        f"📞 تماس: {call_ok}/{total} قابل برقراری",
         "",
-        "<i>نتایج فقط بازتاب‌دهنده وضعیت شبکه شما هستند.</i>",
+        "<i>برای بررسی دقیق از شبکه خودتان، داشبورد وب را باز کنید.</i>",
     ]
     return "\n".join(lines)
 
 
 def format_messenger_detail(r: MessengerResult) -> str:
-    """Format the detailed probe result for a single messenger as HTML (v2)."""
-    avail = _AVAILABILITY_LABEL.get(r.messenger.availability, "")
+    """Simple per-messenger detail for Telegram — user-facing only."""
     call_l = _CALL_OUTSIDE_LABEL.get(r.messenger.call_outside_iran, "❓")
-    vpn_note = ("✅ هر VPN کافی است" if r.messenger.call_vpn_any
-                else "⚠️ فقط VPN با خروجی ایرانی")
+    vpn_note = ("هر VPN کافی است ✅"
+                if r.messenger.call_vpn_any
+                else "فقط VPN با خروجی ایرانی ⚠️")
     reg_note = {
-        "yes": "✅ ثبت‌نام از خارج امکان‌پذیر",
-        "no": "❌ ثبت‌نام از خارج مسدود",
-        "sms": "📱 نیاز به شماره ایرانی",
+        "yes": "✅ ثبت‌نام از خارج ممکن است",
+        "no": "❌ ثبت‌نام از خارج مسدود است",
+        "sms": "📱 نیاز به شماره موبایل ایرانی",
     }.get(r.messenger.registration_outside_iran, "❓")
 
     lines = [
         f"{r.verdict_icon} <b>{r.messenger.name}</b> ({r.messenger.name_fa})",
         "",
-        "── پیام‌رسانی ──",
-        f"وضعیت:  <b>{r.verdict_label_fa}</b>",
-        f"امتیاز: <code>{r.msg_score}/100</code>",
-        f"دسترسی: {avail}",
+        f"💬 پیام‌رسانی:  <b>{r.verdict_label_fa}</b>",
+        f"📞 تماس:        {call_l}",
+        f"🔒 با VPN:      {vpn_note}",
+        f"📝 ثبت‌نام:     {reg_note}",
     ]
-    if r.best_latency_ms:
-        lines.append(f"تأخیر:  <code>{r.best_latency_ms:.0f}ms</code>")
 
-    lines += [
-        "",
-        "── تماس صوتی/تصویری ──",
-        f"وضعیت:       {r.call_verdict_icon} <b>{r.call_verdict_label_fa}</b>",
-        f"امتیاز:      <code>{r.call_score}/100</code>",
-        f"بدون VPN:    {call_l}",
-        f"با VPN:      {vpn_note}",
-        f"ثبت‌نام:     {reg_note}",
-        f"پروتکل:     <code>{r.messenger.call_protocol}</code>",
-    ]
+    if r.best_latency_ms:
+        lines.append(f"⏱ تأخیر:       <code>{r.best_latency_ms:.0f}ms</code>")
 
     if r.messenger.call_notes:
         lines += ["", f"<i>{r.messenger.call_notes}</i>"]
-
-    if r.stun_results:
-        lines += ["", "<b>STUN</b>"]
-        for s in r.stun_results:
-            icon = "✅" if s.reachable else "❌"
-            lat = f" <code>{s.latency_ms}ms</code>" if s.latency_ms else ""
-            tcp = " (TCP)" if s.via_tcp else ""
-            lines.append(f"{icon} <code>{s.host}:{s.port}</code>{lat}{tcp}")
-    elif r.messenger.call_protocol == "proprietary":
-        lines.append("\n<i>STUN قابل اجرا نیست — پروتکل اختصاصی</i>")
-
-    if r.turn_result:
-        icon = "✅" if r.turn_result.reachable else "❌"
-        lat = f" <code>{r.turn_result.latency_ms}ms</code>" if r.turn_result.latency_ms else ""
-        lines += ["", f"<b>TURN</b>  {icon} <code>{r.turn_result.host}:{r.turn_result.port}</code>{lat}"]
-
-    lines += ["", "<b>سرورها</b>"]
-    for u in r.url_results:
-        icon = "✅" if u.reachable else "❌"
-        lat = f" <code>{u.latency_ms}ms</code>" if u.latency_ms else ""
-        lines.append(f"{icon} <code>{u.url}</code>{lat}")
-
-    lines += ["", "<b>DNS</b>"]
-    for d in r.dns_results:
-        icon = "✅" if d.resolved else "❌"
-        ip = f" → <code>{d.ip}</code>" if d.ip else ""
-        lines.append(f"{icon} <code>{d.host}</code>{ip}")
 
     return "\n".join(lines)
