@@ -23,6 +23,8 @@
             --red-lt: #c42828;
             --warn: #8a5a00;
             --warn-lt: #b87a10;
+            --blue: #1a5fd0;
+            --blue-lt: #3a7ff0;
             --mono: 'IBM Plex Mono', monospace;
             --fa: 'Vazirmatn', sans-serif;
         }
@@ -42,12 +44,12 @@
         }
 
         .page {
-            max-width: 860px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 0 1.25rem 5rem;
         }
 
-        /* header */
+        /* ── masthead ── */
         .masthead {
             border-bottom: 3px solid var(--amber);
             padding: 2rem 0 1.25rem;
@@ -93,7 +95,7 @@
             direction: ltr;
         }
 
-        /* section */
+        /* ── section ── */
         .section {
             margin-bottom: 2.5rem;
         }
@@ -123,7 +125,7 @@
             text-transform: uppercase;
         }
 
-        /* capabilities table */
+        /* ── capabilities table ── */
         .cap-table {
             width: 100%;
             border-collapse: collapse;
@@ -137,7 +139,7 @@
         .cap-table th {
             padding: .55rem .7rem;
             font-family: var(--mono);
-            font-size: .58rem;
+            font-size: .56rem;
             font-weight: 600;
             color: var(--muted);
             letter-spacing: .07em;
@@ -164,7 +166,7 @@
         }
 
         .cap-table td {
-            padding: .7rem .7rem;
+            padding: .7rem;
             text-align: center;
             vertical-align: middle;
         }
@@ -222,11 +224,6 @@
             color: #fff;
         }
 
-        .icon-shad {
-            background: #7a1890;
-            color: #fff;
-        }
-
         .messenger-names {
             display: flex;
             flex-direction: column;
@@ -244,7 +241,6 @@
             color: var(--muted);
         }
 
-        /* capability cell */
         .cap {
             display: inline-flex;
             align-items: center;
@@ -275,7 +271,6 @@
             font-size: .68rem;
         }
 
-        /* vpn badge */
         .vpn-badge {
             display: inline-flex;
             align-items: center;
@@ -307,7 +302,43 @@
             border: 1px solid rgba(196, 40, 40, .18);
         }
 
-        /* legend */
+        .call-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            padding: .2rem .55rem;
+            border-radius: 4px;
+            font-family: var(--mono);
+            font-size: .57rem;
+            font-weight: 600;
+            white-space: nowrap;
+            letter-spacing: .03em;
+        }
+
+        .call-yes {
+            background: rgba(26, 122, 60, .13);
+            color: var(--green-lt);
+            border: 1px solid rgba(34, 160, 80, .22);
+        }
+
+        .call-partial {
+            background: rgba(138, 90, 0, .13);
+            color: var(--warn-lt);
+            border: 1px solid rgba(184, 122, 16, .22);
+        }
+
+        .call-vpn {
+            background: rgba(26, 95, 208, .12);
+            color: var(--blue-lt);
+            border: 1px solid rgba(58, 127, 240, .22);
+        }
+
+        .call-no {
+            background: rgba(154, 26, 26, .11);
+            color: var(--red-lt);
+            border: 1px solid rgba(196, 40, 40, .18);
+        }
+
         .legend {
             display: flex;
             gap: 1.25rem;
@@ -325,7 +356,13 @@
             color: var(--muted);
         }
 
-        /* status bar */
+        /* ── call-notes tooltip ── */
+        .has-note {
+            cursor: help;
+            border-bottom: 1px dashed var(--muted);
+        }
+
+        /* ── status bar ── */
         .status-bar {
             background: #111009;
             border: 1px solid var(--border);
@@ -362,11 +399,11 @@
         @keyframes pulse {
             0%, 100% {
                 transform: scale(1);
-                opacity: 1;
+                opacity: 1
             }
             50% {
                 transform: scale(2.4);
-                opacity: 0;
+                opacity: 0
             }
         }
 
@@ -387,7 +424,7 @@
             direction: ltr;
         }
 
-        /* quick result bar */
+        /* ── quick bar ── */
         .quick-bar {
             display: none;
             border: 1px solid var(--border);
@@ -431,7 +468,7 @@
             margin-right: auto;
         }
 
-        /* buttons */
+        /* ── buttons ── */
         .button-row {
             display: flex;
             gap: .6rem;
@@ -472,6 +509,15 @@
             background: var(--amber-lt);
         }
 
+        .btn-call {
+            background: #1a5fd0;
+            color: #fff;
+        }
+
+        .btn-call:hover:not(:disabled) {
+            background: var(--blue-lt);
+        }
+
         .btn-secondary {
             background: transparent;
             color: var(--dim);
@@ -483,10 +529,10 @@
             color: var(--paper);
         }
 
-        /* result grid */
+        /* ── result grid ── */
         .result-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+            grid-template-columns:repeat(auto-fill, minmax(235px, 1fr));
             gap: .6rem;
         }
 
@@ -603,6 +649,159 @@
             color: var(--red-lt);
         }
 
+        .stat-val.blue {
+            color: var(--blue-lt);
+        }
+
+        /* ── call result grid (section 03) ── */
+        .call-grid {
+            display: grid;
+            grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+            gap: .6rem;
+        }
+
+        .call-card {
+            background: #111009;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .call-card .cc-header {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            margin-bottom: .75rem;
+        }
+
+        .call-card .cc-body {
+            display: flex;
+            flex-direction: column;
+            gap: .45rem;
+        }
+
+        .probe-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: .74rem;
+        }
+
+        .probe-label {
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: .6rem;
+        }
+
+        .probe-val {
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+        }
+
+        .stun-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #252318;
+            flex-shrink: 0;
+        }
+
+        .stun-dot.checking {
+            background: var(--amber-lt);
+            animation: pulse 1s infinite;
+        }
+
+        .stun-dot.ok {
+            background: var(--green-lt);
+        }
+
+        .stun-dot.fail {
+            background: var(--red-lt);
+        }
+
+        .stun-dot.warn {
+            background: var(--warn-lt);
+        }
+
+        .lat-tag {
+            font-family: var(--mono);
+            font-size: .58rem;
+            color: var(--muted);
+        }
+
+        .call-verdict-pill {
+            display: inline-block;
+            font-family: var(--mono);
+            font-size: .58rem;
+            font-weight: 600;
+            padding: .18rem .5rem;
+            border-radius: 3px;
+            letter-spacing: .04em;
+        }
+
+        .pill-ok {
+            background: rgba(26, 122, 60, .16);
+            color: var(--green-lt);
+            border: 1px solid rgba(34, 160, 80, .25);
+        }
+
+        .pill-part {
+            background: rgba(138, 90, 0, .15);
+            color: var(--warn-lt);
+            border: 1px solid rgba(184, 122, 16, .25);
+        }
+
+        .pill-fail {
+            background: rgba(154, 26, 26, .13);
+            color: var(--red-lt);
+            border: 1px solid rgba(196, 40, 40, .22);
+        }
+
+        .pill-prop {
+            background: rgba(122, 112, 96, .12);
+            color: var(--dim);
+            border: 1px solid rgba(122, 112, 96, .2);
+        }
+
+        .pill-idle {
+            background: #1a1916;
+            color: var(--muted);
+            border: 1px solid #252318;
+        }
+
+        .divider-mini {
+            height: 1px;
+            background: var(--border);
+            margin: .25rem 0;
+        }
+
+        .vpn-hint {
+            font-size: .67rem;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: .3rem;
+            margin-top: .3rem;
+        }
+
+        .vpn-hint .lk {
+            color: var(--blue-lt);
+        }
+
+        .vpn-hint .gk {
+            color: var(--green-lt);
+        }
+
+        .vpn-hint .rk {
+            color: var(--red-lt);
+        }
+
+        .vpn-hint .wk {
+            color: var(--warn-lt);
+        }
+
         .spinner {
             display: inline-block;
             width: 11px;
@@ -618,6 +817,28 @@
             to {
                 transform: rotate(360deg);
             }
+        }
+
+        .info-box {
+            background: #0d0c0a;
+            border: 1px solid var(--border);
+            border-right: 3px solid var(--amber);
+            border-radius: 6px;
+            padding: .8rem 1rem;
+            font-size: .76rem;
+            color: var(--dim);
+            line-height: 1.65;
+            margin-bottom: 1.1rem;
+        }
+
+        .info-box strong {
+            color: #fff;
+        }
+
+        .info-box code {
+            font-family: var(--mono);
+            font-size: .68rem;
+            color: var(--amber-lt);
         }
 
         footer {
@@ -643,8 +864,8 @@
         }
 
         @media (max-width: 600px) {
-            .result-grid {
-                grid-template-columns: 1fr;
+            .result-grid, .call-grid {
+                grid-template-columns:1fr;
             }
 
             .cap-table th:nth-child(3), .cap-table td:nth-child(3) {
@@ -688,7 +909,9 @@
                 <th>تماس صوتی</th>
                 <th>تماس تصویری</th>
                 <th>پیام‌رسانی</th>
-                <th>کارکرد با VPN از خارج ایران</th>
+                <th>تماس بدون VPN از خارج</th>
+                <th>تماس با VPN از خارج</th>
+                <th>ثبت‌نام از خارج</th>
             </tr>
             </thead>
             <tbody>
@@ -705,7 +928,9 @@
                 <td><span class="cap cap-yes">✓</span></td>
                 <td><span class="cap cap-yes">✓</span></td>
                 <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="vpn-badge vpn-yes">✓ &nbsp;کار می‌کند</span></td>
+                <td><span class="call-badge call-yes">✓ کار می‌کند</span></td>
+                <td><span class="call-badge call-yes">✓ هر VPN</span></td>
+                <td><span class="call-badge call-vpn" title="نیاز به شماره موبایل ایرانی">📱 شماره ایرانی</span></td>
             </tr>
             <tr>
                 <td>
@@ -720,7 +945,10 @@
                 <td><span class="cap cap-yes">✓</span></td>
                 <td><span class="cap cap-yes">✓</span></td>
                 <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="vpn-badge vpn-part">~ &nbsp;ناپایدار</span></td>
+                <td><span class="call-badge call-no">✕ مسدود</span></td>
+                <td><span class="call-badge call-vpn" title="فقط VPN با خروجی ایرانی کار می‌کند">🔒 VPN ایرانی</span>
+                </td>
+                <td><span class="call-badge call-no">✕ مسدود</span></td>
             </tr>
             <tr>
                 <td>
@@ -735,7 +963,10 @@
                 <td><span class="cap cap-yes">✓</span></td>
                 <td><span class="cap cap-yes">✓</span></td>
                 <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="vpn-badge vpn-part">~ &nbsp;ناپایدار</span></td>
+                <td><span class="call-badge call-no">✕ مسدود</span></td>
+                <td><span class="call-badge call-vpn"
+                          title="فقط VPN با خروجی ایرانی — پروتکل اختصاصی">🔒 VPN ایرانی</span></td>
+                <td><span class="call-badge call-no">✕ مسدود</span></td>
             </tr>
             <tr>
                 <td>
@@ -750,7 +981,9 @@
                 <td><span class="cap cap-yes">✓</span></td>
                 <td><span class="cap cap-yes">✓</span></td>
                 <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="vpn-badge vpn-yes">✓ &nbsp;کار می‌کند</span></td>
+                <td><span class="call-badge call-partial">~ ناپایدار</span></td>
+                <td><span class="call-badge call-yes">✓ هر VPN</span></td>
+                <td><span class="call-badge call-vpn">📱 شماره ایرانی</span></td>
             </tr>
             <tr>
                 <td>
@@ -765,7 +998,9 @@
                 <td><span class="cap cap-yes">✓</span></td>
                 <td><span class="cap cap-yes">✓</span></td>
                 <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="vpn-badge vpn-yes">✓ &nbsp;کار می‌کند</span></td>
+                <td><span class="call-badge call-yes">✓ کار می‌کند</span></td>
+                <td><span class="call-badge call-yes">✓ هر VPN</span></td>
+                <td><span class="call-badge call-yes">✓ آزاد</span></td>
             </tr>
             <tr>
                 <td>
@@ -777,25 +1012,20 @@
                         </div>
                     </div>
                 </td>
-                <td><span class="cap cap-part" title="ممکن است با VPN کار نکند">~</span></td>
-                <td><span class="cap cap-part" title="ممکن است با VPN کار نکند">~</span></td>
+                <td><span class="cap cap-part">~</span></td>
+                <td><span class="cap cap-part">~</span></td>
                 <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="vpn-badge vpn-part">~ &nbsp;ناپایدار</span></td>
+                <td><span class="call-badge call-no">✕ مسدود</span></td>
+                <td><span class="call-badge call-no">✕ حتی با VPN</span></td>
+                <td><span class="call-badge call-no">✕ مسدود</span></td>
             </tr>
             <tr>
-                <td>
-                    <div class="messenger-cell">
-                        <div class="messenger-icon icon-shad">ش</div>
-                        <div class="messenger-names">
-                            <div class="messenger-name-en">Shad</div>
-                            <div class="messenger-name-fa">شاد</div>
-                        </div>
-                    </div>
-                </td>
                 <td><span class="cap cap-no">✕</span></td>
                 <td><span class="cap cap-no">✕</span></td>
                 <td><span class="cap cap-no">✕</span></td>
-                <td><span class="vpn-badge vpn-no">✕ &nbsp;مسدود</span></td>
+                <td><span class="call-badge call-no">✕ مسدود</span></td>
+                <td><span class="call-badge call-no">✕ حتی با VPN</span></td>
+                <td><span class="call-badge call-no">✕ مسدود</span></td>
             </tr>
             </tbody>
         </table>
@@ -805,19 +1035,21 @@
                 کامل
             </div>
             <div class="legend-item"><span class="cap cap-part"
-                                           style="width:17px;height:17px;font-size:.58rem;">~</span>ناپایدار یا محدود
+                                           style="width:17px;height:17px;font-size:.58rem;">~</span>ناپایدار
             </div>
             <div class="legend-item"><span class="cap cap-no" style="width:17px;height:17px;font-size:.62rem;">✕</span>پشتیبانی
                 ندارد
             </div>
-            <div class="legend-item"><span class="vpn-badge vpn-yes" style="font-size:.53rem;">✓ کار می‌کند</span>با VPN
-                از خارج ایران قابل دسترس
+            <div class="legend-item"><span class="call-badge call-yes" style="font-size:.53rem;">✓ کار می‌کند</span>از
+                خارج بدون VPN
             </div>
-            <div class="legend-item"><span class="vpn-badge vpn-part" style="font-size:.53rem;">~ ناپایدار</span>دسترسی
-                ناپایدار یا محدود
+            <div class="legend-item"><span class="call-badge call-partial" style="font-size:.53rem;">~ ناپایدار</span>متناوب
             </div>
-            <div class="legend-item"><span class="vpn-badge vpn-no" style="font-size:.53rem;">✕ مسدود</span>خارج از
-                ایران در دسترس نیست
+            <div class="legend-item"><span class="call-badge call-vpn" style="font-size:.53rem;">🔒 VPN ایرانی</span>فقط
+                با VPN خروجی ایران
+            </div>
+            <div class="legend-item"><span class="call-badge call-no" style="font-size:.53rem;">✕ مسدود</span>حتی با VPN
+                کار نمی‌کند
             </div>
         </div>
     </section>
@@ -826,7 +1058,7 @@
     <section class="section">
         <div class="section-header">
             <span class="section-num">۰۲</span>
-            <span class="section-title">بررسی زنده از شبکه شما</span>
+            <span class="section-title">بررسی زنده پیام‌رسانی از شبکه شما</span>
         </div>
 
         <div class="status-bar">
@@ -852,6 +1084,31 @@
         <div class="result-grid" id="resultGrid" style="display:none;"></div>
     </section>
 
+    <section class="section">
+        <div class="section-header">
+            <span class="section-num">۰۳</span>
+            <span class="section-title">بررسی زنده تماس صوتی/تصویری (WebRTC / STUN)</span>
+        </div>
+
+        <div class="info-box">
+            <strong>چگونه کار می‌کند:</strong>
+            این بررسی با استفاده از <code>RTCPeerConnection</code> مرورگر، سرورهای STUN/TURN هر پیام‌رسان را تست می‌کند
+            —
+            همان زیرساختی که تماس‌های صوتی و تصویری از آن استفاده می‌کنند.
+            اگر مرورگر بتواند یک کاندیدای ICE از نوع <code>srflx</code> یا <code>relay</code> دریافت کند،
+            تماس واقعی نیز امکان‌پذیر است.
+            پیام‌رسان‌هایی که از پروتکل اختصاصی استفاده می‌کنند (روبیکا، سروش) قابل تست از طریق STUN نیستند.
+        </div>
+
+        <div class="button-row">
+            <button class="btn btn-call" id="btnCallScan" onclick="runCallScan()">
+                <span id="btnCallLabel">بررسی تماس — همه پیام‌رسان‌ها</span>
+            </button>
+        </div>
+
+        <div class="call-grid" id="callGrid"></div>
+    </section>
+
     <footer>
         <span>نتایج فقط بازتاب‌دهنده وضعیت شبکه شما هستند — هیچ داده‌ای ذخیره نمی‌شود</span>
         <a href="https://t.me/ping_luma_bot" target="_blank">@ping_luma_bot</a>
@@ -863,71 +1120,88 @@
 
     const MESSENGERS = [
         {
-            id: 'bale',
-            fa: 'بله',
-            en: 'Bale',
-            letter: 'ب',
-            iconClass: 'icon-bale',
+            id: 'bale', fa: 'بله', en: 'Bale', letter: 'ب', iconClass: 'icon-bale',
             urls: ['https://tapi.bale.ai', 'https://web.bale.ai'],
-            dns: ['tapi.bale.ai', 'web.bale.ai', 'cdn.bale.ai']
+            dns: ['tapi.bale.ai', 'web.bale.ai', 'cdn.bale.ai'],
+            stun: ['stun:stun.bale.ai:3478', 'stun:tapi.bale.ai:3478'],
+            turn: 'turn.bale.ai',
+            callOutside: 'yes',
+            callVpnAny: true,
+            regOutside: 'sms',
+            protocol: 'webrtc',
+            callNote: 'CDN-fronted — تماس از خارج بدون VPN کار می‌کند',
         },
         {
-            id: 'eitaa',
-            fa: 'ایتا',
-            en: 'Eitaa',
-            letter: 'ا',
-            iconClass: 'icon-eitaa',
+            id: 'eitaa', fa: 'ایتا', en: 'Eitaa', letter: 'ا', iconClass: 'icon-eitaa',
             urls: ['https://eitaa.com', 'https://api.eitaa.com'],
-            dns: ['eitaa.com', 'api.eitaa.com']
+            dns: ['eitaa.com', 'api.eitaa.com'],
+            stun: ['stun:stun.eitaa.com:3478', 'stun:api.eitaa.com:3478'],
+            turn: 'turn.eitaa.com',
+            callOutside: 'vpn',
+            callVpnAny: false,
+            regOutside: 'no',
+            protocol: 'webrtc',
+            callNote: 'TURN در IP‌های داخلی ایران — فقط VPN ایرانی کافی است',
         },
         {
-            id: 'rubika',
-            fa: 'روبیکا',
-            en: 'Rubika',
-            letter: 'ر',
-            iconClass: 'icon-rubika',
+            id: 'rubika', fa: 'روبیکا', en: 'Rubika', letter: 'ر', iconClass: 'icon-rubika',
             urls: ['https://rubika.ir', 'https://getapp.rubika.ir'],
-            dns: ['rubika.ir', 'getapp.rubika.ir']
+            dns: ['rubika.ir', 'getapp.rubika.ir'],
+            stun: [],
+            turn: null,
+            callOutside: 'vpn',
+            callVpnAny: false,
+            regOutside: 'no',
+            protocol: 'proprietary',
+            callNote: 'پروتکل باینری اختصاصی — تست STUN ممکن نیست',
         },
         {
-            id: 'gap',
-            fa: 'گپ',
-            en: 'Gap',
-            letter: 'گ',
-            iconClass: 'icon-gap',
+            id: 'gap', fa: 'گپ', en: 'Gap', letter: 'گ', iconClass: 'icon-gap',
             urls: ['https://gap.im', 'https://api.gap.im'],
-            dns: ['gap.im', 'api.gap.im']
+            dns: ['gap.im', 'api.gap.im'],
+            stun: ['stun:stun.gap.im:3478', 'stun:api.gap.im:3478'],
+            turn: 'turn.gap.im',
+            callOutside: 'partial',
+            callVpnAny: true,
+            regOutside: 'sms',
+            protocol: 'webrtc',
+            callNote: 'پوشش relay متناوب — VPN تجاری بهبود می‌دهد',
         },
         {
-            id: 'igap',
-            fa: 'آی‌گپ',
-            en: 'iGap',
-            letter: 'آ',
-            iconClass: 'icon-igap',
+            id: 'igap', fa: 'آی‌گپ', en: 'iGap', letter: 'آ', iconClass: 'icon-igap',
             urls: ['https://igap.net', 'https://api.igap.net'],
-            dns: ['igap.net', 'api.igap.net']
+            dns: ['igap.net', 'api.igap.net'],
+            stun: ['stun:stun.igap.net:3478', 'stun:api.igap.net:3478'],
+            turn: 'turn.igap.net',
+            callOutside: 'yes',
+            callVpnAny: true,
+            regOutside: 'yes',
+            protocol: 'webrtc',
+            callNote: 'بهترین گزینه برای تماس از خارج — STUN/TURN بین‌المللی',
         },
         {
-            id: 'soroush',
-            fa: 'سروش‌پلاس',
-            en: 'Soroush+',
-            letter: 'س',
-            iconClass: 'icon-soroush',
+            id: 'soroush', fa: 'سروش‌پلاس', en: 'Soroush+', letter: 'س', iconClass: 'icon-soroush',
             urls: ['https://soroushapp.com', 'https://api.soroushapp.com'],
-            dns: ['soroushapp.com', 'api.soroushapp.com']
-        },
-        {
-            id: 'shad',
-            fa: 'شاد',
-            en: 'Shad',
-            letter: 'ش',
-            iconClass: 'icon-shad',
-            urls: ['https://shad.ir', 'https://app.shad.ir'],
-            dns: ['shad.ir', 'app.shad.ir']
+            dns: ['soroushapp.com', 'api.soroushapp.com'],
+            stun: [],              // proprietary — domestic only
+            turn: null,
+            callOutside: 'no',
+            callVpnAny: false,
+            regOutside: 'no',
+            protocol: 'proprietary',
+            callNote: 'زیرساخت دولتی IRIB — تماس حتی با VPN ایرانی قابل اطمینان نیست',
         },
     ];
 
     const VERDICT_LABEL = {ok: 'در دسترس', partial: 'ناپایدار', fail: 'مسدود', idle: 'در انتظار'};
+
+    const CALL_OUTSIDE_META = {
+        yes: {label: 'بدون VPN ✅', cls: 'call-yes'},
+        partial: {label: 'ناپایدار ⚠️', cls: 'call-partial'},
+        vpn: {label: 'VPN ایرانی 🔒', cls: 'call-vpn'},
+        no: {label: 'مسدود ✕', cls: 'call-no'},
+        unknown: {label: 'نامشخص ❓', cls: 'call-no'},
+    };
 
     (function initHeader() {
         const d = new Date();
@@ -939,9 +1213,9 @@
     async function probeUrl(url, timeoutMs = 8000) {
         const t = performance.now();
         try {
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), timeoutMs);
-            await fetch(url, {mode: 'no-cors', signal: controller.signal});
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+            await fetch(url, {mode: 'no-cors', signal: ctrl.signal});
             clearTimeout(timer);
             return {ok: true, lat: Math.round(performance.now() - t)};
         } catch {
@@ -965,10 +1239,6 @@
         });
     }
 
-    /**
-     * run all probes for a messenger and compute a score/verdict.
-     * mirrors the scoring logic in ping_luma/checker.py.
-     */
     async function probeMessenger(messenger) {
         const [urlResults, dnsResults] = await Promise.all([
             Promise.all(messenger.urls.map(u => probeUrl(u))),
@@ -979,28 +1249,85 @@
         const okDns = dnsResults.filter(r => r.ok).length;
 
         let score = Math.round((okUrls / messenger.urls.length) * 60 + (okDns / messenger.dns.length) * 30);
-
-        const successLatencies = urlResults.filter(r => r.ok).map(r => r.lat);
-        if (successLatencies.length) {
-            const best = Math.min(...successLatencies);
-            score += best < 500 ? 10 : best < 1200 ? 5 : 0;
+        const lats = urlResults.filter(r => r.ok).map(r => r.lat);
+        if (lats.length) {
+            const b = Math.min(...lats);
+            score += b < 500 ? 10 : b < 1200 ? 5 : 0;
         }
         score = Math.min(100, score);
 
         return {
-            score,
-            verdict: score >= 70 ? 'ok' : score >= 30 ? 'partial' : 'fail',
-            latency: successLatencies.length ? Math.min(...successLatencies) : null,
-            okUrls,
-            totalUrls: messenger.urls.length,
+            score, verdict: score >= 70 ? 'ok' : score >= 30 ? 'partial' : 'fail',
+            latency: lats.length ? Math.min(...lats) : null, okUrls, totalUrls: messenger.urls.length
         };
+    }
+
+    async function probeStun(stunUrls, timeoutMs = 7000) {
+        if (!stunUrls || stunUrls.length === 0) {
+            return {stun: 'not-applicable', lat: null, candidates: []};
+        }
+        const iceServers = stunUrls.map(u => ({urls: u}));
+        let pc;
+        const t = performance.now();
+        try {
+            pc = new RTCPeerConnection({iceServers, iceCandidatePoolSize: 2});
+        } catch {
+            return {stun: 'fail', lat: null, candidates: [], error: 'RTCPeerConnection not supported'};
+        }
+        return new Promise(resolve => {
+            const candidates = [];
+            let done = false;
+            let gotSrflx = false;
+
+            const finish = (verdict) => {
+                if (done) return;
+                done = true;
+                clearTimeout(timer);
+                try {
+                    pc.close();
+                } catch {
+                }
+                resolve({stun: verdict, lat: Math.round(performance.now() - t), candidates});
+            };
+
+            const timer = setTimeout(() => {
+                finish(gotSrflx ? 'ok' : candidates.length ? 'host-only' : 'fail');
+            }, timeoutMs);
+
+            pc.onicecandidate = (e) => {
+                if (!e.candidate) {
+                    // ICE gathering complete
+                    finish(gotSrflx ? 'ok' : candidates.length ? 'host-only' : 'fail');
+                    return;
+                }
+                const c = e.candidate;
+                candidates.push({type: c.type, foundation: c.foundation});
+                if (c.type === 'srflx' || c.type === 'relay') {
+                    gotSrflx = true;
+                    finish('ok');
+                }
+            };
+
+            pc.onicegatheringstatechange = () => {
+                if (pc.iceGatheringState === 'complete') {
+                    finish(gotSrflx ? 'ok' : candidates.length ? 'host-only' : 'fail');
+                }
+            };
+
+            pc.createDataChannel('pingluma-probe');
+            pc.createOffer()
+                .then(o => pc.setLocalDescription(o))
+                .catch(() => finish('fail'));
+        });
     }
 
     let busy = false;
 
     function setLocked(locked) {
-        document.getElementById('btnScan').disabled = locked;
-        document.getElementById('btnQuick').disabled = locked;
+        ['btnScan', 'btnQuick', 'btnCallScan'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.disabled = locked;
+        });
     }
 
     function setStatus(active, html) {
@@ -1012,28 +1339,21 @@
 
     function buildCard(messenger, result) {
         const verdict = result ? result.verdict : 'idle';
-        const latClass = result && result.latency
-            ? (result.latency < 500 ? 'good' : result.latency < 1200 ? 'warn' : 'bad')
-            : '';
+        const latClass = result && result.latency ? (result.latency < 500 ? 'good' : result.latency < 1200 ? 'warn' : 'bad') : '';
         const latText = result && result.latency ? `<span class="stat-val ${latClass}">${result.latency}ms</span>` : '<span class="stat-val">—</span>';
         const scoreClass = result ? (result.score >= 70 ? 'good' : result.score >= 30 ? 'warn' : 'bad') : '';
         const scoreText = result ? `<span class="stat-val ${scoreClass}">${result.score}</span>` : '<span class="stat-val">—</span>';
-        const serverText = result ? `<span>سرور: <span class="stat-val">${result.okUrls}/${result.totalUrls}</span></span>` : '';
-
-        return `
-    <div class="result-card ${verdict}" id="card-${messenger.id}">
+        const srvText = result ? `<span>سرور: <span class="stat-val">${result.okUrls}/${result.totalUrls}</span></span>` : '';
+        return `<div class="result-card ${verdict}" id="card-${messenger.id}">
       <div class="card-header">
         <div class="card-icon ${messenger.iconClass}">${messenger.letter}</div>
-        <div class="card-names">
-          <div class="card-name-en">${messenger.en}</div>
-          <div class="card-name-fa">${messenger.fa}</div>
-        </div>
+        <div class="card-names"><div class="card-name-en">${messenger.en}</div><div class="card-name-fa">${messenger.fa}</div></div>
         <span class="verdict-badge ${verdict}">${VERDICT_LABEL[verdict]}</span>
       </div>
       <div class="card-stats">
         <span>تأخیر: ${latText}</span>
         <span>امتیاز: ${scoreText}/100</span>
-        ${serverText}
+        ${srvText}
       </div>
     </div>`;
     }
@@ -1055,13 +1375,13 @@
             document.getElementById('quickBarIcon').textContent = '✅';
             document.getElementById('quickBarText').innerHTML = '<strong>بله</strong> از شبکه شما در دسترس است';
             document.getElementById('quickBarLat').textContent = result.lat + 'ms';
-            setStatus(false, 'سرور بله پاسخ داد. برای بررسی همه پیام‌رسان‌ها از «بررسی کامل» استفاده کنید.');
+            setStatus(false, 'سرور بله پاسخ داد.');
         } else {
             bar.className = 'quick-bar visible fail';
             document.getElementById('quickBarIcon').textContent = '❌';
             document.getElementById('quickBarText').innerHTML = 'سرور اصلی <strong>بله</strong> پاسخ نداد';
             document.getElementById('quickBarLat').textContent = '';
-            setStatus(false, 'بله از این شبکه پاسخ نداد. «بررسی کامل» را برای گزارش جامع اجرا کنید.');
+            setStatus(false, 'بله از این شبکه پاسخ نداد.');
         }
 
         document.getElementById('btnQuickLabel').textContent = 'پینگ سریع — بله';
@@ -1079,31 +1399,137 @@
         const grid = document.getElementById('resultGrid');
         grid.style.display = 'grid';
         grid.innerHTML = MESSENGERS.map(m => buildCard(m, null)).join('');
-        setStatus(true, `بررسی <strong>${MESSENGERS.length} پیام‌رسان</strong> به صورت همزمان…`);
-
-        await Promise.all(MESSENGERS.map(messenger =>
-            probeMessenger(messenger).then(result => {
-                const el = document.getElementById(`card-${messenger.id}`);
+        setStatus(true, `بررسی <strong>${MESSENGERS.length} پیام‌رسان</strong>…`);
+        await Promise.all(MESSENGERS.map(m =>
+            probeMessenger(m).then(r => {
+                const el = document.getElementById(`card-${m.id}`);
                 if (el) {
                     const tmp = document.createElement('div');
-                    tmp.innerHTML = buildCard(messenger, result);
+                    tmp.innerHTML = buildCard(m, r);
                     el.replaceWith(tmp.firstElementChild);
                 }
             })
         ));
 
         const cards = [...document.querySelectorAll('.result-card')];
-        const numOk = cards.filter(c => c.classList.contains('ok')).length;
-        const numPart = cards.filter(c => c.classList.contains('partial')).length;
-        const numFail = cards.filter(c => c.classList.contains('fail')).length;
-
-        setStatus(false,
-            `<strong>${numOk}</strong> در دسترس &nbsp;·&nbsp; ` +
-            `<strong>${numPart}</strong> ناپایدار &nbsp;·&nbsp; ` +
-            `<strong>${numFail}</strong> مسدود — از ${MESSENGERS.length} پیام‌رسان`
-        );
-
+        const nOk = cards.filter(c => c.classList.contains('ok')).length;
+        const nP = cards.filter(c => c.classList.contains('partial')).length;
+        const nF = cards.filter(c => c.classList.contains('fail')).length;
+        setStatus(false, `<strong>${nOk}</strong> در دسترس · <strong>${nP}</strong> ناپایدار · <strong>${nF}</strong> مسدود`);
         document.getElementById('btnScanLabel').textContent = 'بررسی کامل همه پیام‌رسان‌ها';
+        setLocked(false);
+        busy = false;
+    }
+
+    function stunVerdictPill(verdict) {
+        const map = {
+            ok: ['pill-ok', '✅ STUN قابل دسترس'],
+            'host-only': ['pill-part', '⚠️ فقط host — STUN بلاک'],
+            fail: ['pill-fail', '❌ STUN مسدود'],
+            'not-applicable': ['pill-prop', '— پروتکل اختصاصی'],
+            checking: ['pill-idle', '<span class="spinner"></span> در حال بررسی…'],
+            idle: ['pill-idle', 'در انتظار'],
+        };
+        const [cls, text] = map[verdict] || ['pill-idle', verdict];
+        return `<span class="call-verdict-pill ${cls}">${text}</span>`;
+    }
+
+    function stunDotClass(v) {
+        return {
+            ok: 'ok',
+            'host-only': 'warn',
+            fail: 'fail',
+            'not-applicable': '',
+            checking: 'checking',
+            idle: ''
+        }[v] || '';
+    }
+
+    function buildCallCard(m, probeResult /* null = idle, 'checking' = in progress */) {
+        const state = probeResult === 'checking' ? 'checking' : probeResult ? probeResult.stun : 'idle';
+
+        const coMeta = CALL_OUTSIDE_META[m.callOutside] || CALL_OUTSIDE_META.unknown;
+        const vpnText = m.callVpnAny
+            ? `<span class="gk">✓ هر VPN کافی است</span>`
+            : m.callOutside === 'no'
+                ? `<span class="rk">✕ VPN کمکی نمی‌کند</span>`
+                : `<span class="wk">⚠ فقط VPN ایرانی</span>`;
+
+        const regText = {
+            yes: '<span class="gk">✓ آزاد</span>',
+            no: '<span class="rk">✕ مسدود</span>',
+            sms: '<span class="wk">📱 شماره ایرانی</span>'
+        }[m.regOutside] || '—';
+
+        const latText = probeResult && probeResult !== 'checking' && probeResult.lat
+            ? `<span class="lat-tag">${probeResult.lat}ms</span>` : '';
+
+        const candCount = probeResult && probeResult !== 'checking' && probeResult.candidates
+            ? probeResult.candidates.length : 0;
+
+        return `<div class="call-card" id="ccrd-${m.id}">
+      <div class="cc-header">
+        <div class="card-icon ${m.iconClass}" style="width:28px;height:28px;border-radius:6px;">${m.letter}</div>
+        <div class="card-names" style="flex:1">
+          <div class="card-name-en">${m.en}</div>
+          <div class="card-name-fa">${m.fa}</div>
+        </div>
+        <div class="stun-dot ${stunDotClass(state)}"></div>
+      </div>
+      <div class="cc-body">
+        <div class="probe-row">
+          <span class="probe-label">STUN/ICE</span>
+          <span class="probe-val">${stunVerdictPill(state)} ${latText}</span>
+        </div>
+        ${probeResult && probeResult !== 'checking' && probeResult.candidates && probeResult.candidates.length > 0 ? `
+        <div class="probe-row">
+          <span class="probe-label">ICE candidates</span>
+          <span class="probe-val" style="font-family:var(--mono);font-size:.6rem;color:var(--dim);">${candCount} یافت شد</span>
+        </div>` : ''}
+        <div class="divider-mini"></div>
+        <div class="probe-row">
+          <span class="probe-label">بدون VPN</span>
+          <span class="probe-val"><span class="call-badge ${coMeta.cls}" style="font-size:.55rem;">${coMeta.label}</span></span>
+        </div>
+        <div class="probe-row">
+          <span class="probe-label">با VPN</span>
+          <span class="probe-val vpn-hint">${vpnText}</span>
+        </div>
+        <div class="probe-row">
+          <span class="probe-label">ثبت‌نام</span>
+          <span class="probe-val vpn-hint">${regText}</span>
+        </div>
+        <div class="divider-mini"></div>
+        <div style="font-size:.67rem;color:var(--muted);line-height:1.5;">${m.callNote}</div>
+      </div>
+    </div>`;
+    }
+
+    async function runCallScan() {
+        if (busy) return;
+        busy = true;
+        setLocked(true);
+        document.getElementById('btnCallLabel').innerHTML = '<span class="spinner"></span> در حال بررسی تماس…';
+
+        const grid = document.getElementById('callGrid');
+        grid.innerHTML = MESSENGERS.map(m => buildCallCard(m, 'checking')).join('');
+
+        await Promise.all(MESSENGERS.map(async m => {
+            let result;
+            if (m.stun.length === 0) {
+                result = {stun: 'not-applicable', lat: null, candidates: []};
+            } else {
+                result = await probeStun(m.stun, 8000);
+            }
+            const el = document.getElementById(`ccrd-${m.id}`);
+            if (el) {
+                const tmp = document.createElement('div');
+                tmp.innerHTML = buildCallCard(m, result);
+                el.replaceWith(tmp.firstElementChild);
+            }
+        }));
+
+        document.getElementById('btnCallLabel').textContent = 'بررسی تماس — همه پیام‌رسان‌ها';
         setLocked(false);
         busy = false;
     }
