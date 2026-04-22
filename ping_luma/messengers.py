@@ -1,22 +1,27 @@
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 @dataclass(frozen=True)
 class Messenger:
-    id: str  # short slug used as a stable identifier, e.g. "bale"
-    name: str  # english display name
-    name_fa: str  # persian display name shown to users
-    probe_urls: List[str]  # https endpoints to probe, in priority order
-    dns_hosts: List[str]  # hostnames to resolve via DNS
-    availability: str  # "global" | "iran" | "mixed"
-    description: str  # one-line English description (internal use)
-    website: str  # canonical homepage URL
+    id: str
+    name: str
+    name_fa: str
+    probe_urls: List[str]
+    dns_hosts: List[str]
+    availability: str
+    description: str
+    website: str
 
+    call_protocol: str = "webrtc"
     call_capable: bool = False
+    call_outside_iran: str = "unknown"
+    call_vpn_any: bool = False  # True = any VPN works; False = Iranian-exit only
+    registration_outside_iran: str = "no"  # "yes" | "no" | "sms"
+    call_notes: str = ""
+
     stun_hosts: List[str] = field(default_factory=list)
-    turn_hosts: List[str] = field(default_factory=list)
-    calls_global: bool = False
+    turn_host: Optional[str] = None  # primary TURN host (no port)
 
 
 MESSENGERS: List[Messenger] = [
@@ -29,10 +34,14 @@ MESSENGERS: List[Messenger] = [
         availability="global",
         description="Messaging and mobile-payment app by Bank Melli Iran",
         website="https://bale.ai",
+        call_protocol="webrtc",
         call_capable=True,
+        call_outside_iran="yes",
+        call_vpn_any=True,
+        registration_outside_iran="sms",
+        call_notes="CDN-fronted — calls work from outside Iran without VPN",
         stun_hosts=["stun.bale.ai", "tapi.bale.ai"],
-        turn_hosts=["turn.bale.ai:3478", "turn.bale.ai:5349"],
-        calls_global=True,
+        turn_host="turn.bale.ai",
     ),
     Messenger(
         id="eitaa",
@@ -43,10 +52,14 @@ MESSENGERS: List[Messenger] = [
         availability="mixed",
         description="Messaging app with an Islamic-values focus",
         website="https://eitaa.com",
+        call_protocol="webrtc",
         call_capable=True,
+        call_outside_iran="vpn",
+        call_vpn_any=False,
+        registration_outside_iran="no",
+        call_notes="TURN servers on Iranian IPs — only Iranian-exit VPN works",
         stun_hosts=["stun.eitaa.com"],
-        turn_hosts=["turn.eitaa.com:3478"],
-        calls_global=False,
+        turn_host="turn.eitaa.com",
     ),
     Messenger(
         id="rubika",
@@ -57,10 +70,14 @@ MESSENGERS: List[Messenger] = [
         availability="mixed",
         description="Social messaging platform by MCI (Hamrah-e-Aval)",
         website="https://rubika.ir",
+        call_protocol="proprietary",
         call_capable=True,
-        stun_hosts=["stun.rubika.ir"],
-        turn_hosts=["turn.rubika.ir:3478"],
-        calls_global=False,
+        call_outside_iran="vpn",
+        call_vpn_any=False,
+        registration_outside_iran="no",
+        call_notes="Proprietary binary protocol — only Iranian-exit VPN works",
+        stun_hosts=[],
+        turn_host=None,
     ),
     Messenger(
         id="gap",
@@ -71,10 +88,14 @@ MESSENGERS: List[Messenger] = [
         availability="global",
         description="Cross-platform messenger with channel support",
         website="https://gap.im",
+        call_protocol="webrtc",
         call_capable=True,
+        call_outside_iran="partial",
+        call_vpn_any=True,
+        registration_outside_iran="sms",
+        call_notes="Intermittent relay coverage — commercial VPN improves reliability",
         stun_hosts=["stun.gap.im"],
-        turn_hosts=["turn.gap.im:3478", "turn.gap.im:5349"],
-        calls_global=True,
+        turn_host="turn.gap.im",
     ),
     Messenger(
         id="igap",
@@ -85,24 +106,32 @@ MESSENGERS: List[Messenger] = [
         availability="global",
         description="Feature-rich messenger with voice and video calls",
         website="https://igap.net",
+        call_protocol="webrtc",
         call_capable=True,
+        call_outside_iran="yes",
+        call_vpn_any=True,
+        registration_outside_iran="yes",
+        call_notes="Best option for calls from outside — international STUN/TURN",
         stun_hosts=["stun.igap.net", "stun2.igap.net"],
-        turn_hosts=["turn.igap.net:3478", "turn.igap.net:5349"],
-        calls_global=True,
+        turn_host="turn.igap.net",
     ),
     Messenger(
         id="soroush",
-        name="Soroush Plus",
+        name="Soroush+",
         name_fa="سروش‌پلاس",
         probe_urls=["https://soroushapp.com", "https://api.soroushapp.com"],
         dns_hosts=["soroushapp.com", "api.soroushapp.com"],
         availability="mixed",
-        description="State-affiliated messenger from IRIB (Iranian state broadcasting)",
+        description="State-affiliated messenger from IRIB",
         website="https://soroushapp.com",
+        call_protocol="proprietary",
         call_capable=True,
-        stun_hosts=["stun.soroushapp.com"],
-        turn_hosts=["turn.soroushapp.com:3478"],
-        calls_global=False,
+        call_outside_iran="no",
+        call_vpn_any=False,
+        registration_outside_iran="no",
+        call_notes="State IRIB infrastructure — calls unreliable even with Iranian VPN",
+        stun_hosts=[],
+        turn_host=None,
     ),
 ]
 
