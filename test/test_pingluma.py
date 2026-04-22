@@ -38,7 +38,7 @@ class TestRegistry(unittest.TestCase):
 
     def test_all_expected_ids_present(self):
         ids = {m.id for m in MESSENGERS}
-        for expected in ["bale", "eitaa", "rubika", "gap", "igap", "soroush", "shad"]:
+        for expected in ["bale", "eitaa", "rubika", "gap", "igap", "soroush"]:
             self.assertIn(expected, ids)
 
     def test_lookup_by_id(self):
@@ -58,9 +58,6 @@ class TestRegistry(unittest.TestCase):
     def test_all_have_dns_hosts(self):
         for m in MESSENGERS:
             self.assertGreater(len(m.dns_hosts), 0, f"{m.id} has no dns_hosts")
-
-    def test_shad_is_iran_only(self):
-        self.assertEqual(MESSENGER_BY_ID["shad"].availability, "iran")
 
     def test_bale_gap_igap_are_global(self):
         for mid in ["bale", "gap", "igap"]:
@@ -116,15 +113,6 @@ class TestCheckOneMessenger(unittest.TestCase):
         self.assertEqual(result.verdict, "REACHABLE")
         self.assertIsNotNone(result.best_latency_ms)
 
-    @patch("ping_luma.checker._probe_url")
-    @patch("ping_luma.checker._probe_dns")
-    def test_shad_blocked_when_probes_fail(self, mock_dns, mock_url):
-        mock_url.return_value = _url(False)
-        mock_dns.return_value = _dns(False)
-        result = _check_one_messenger(MESSENGER_BY_ID["shad"])
-        self.assertEqual(result.verdict, "BLOCKED")
-        self.assertIsNone(result.best_latency_ms)
-
 
 class TestQuickPing(unittest.TestCase):
     @patch("ping_luma.checker._probe_url")
@@ -169,7 +157,6 @@ class TestFormatters(unittest.TestCase):
                 self._make_result("gap", "REACHABLE", 85),
                 self._make_result("igap", "REACHABLE", 80),
                 self._make_result("soroush", "PARTIAL", 40),
-                self._make_result("shad", "BLOCKED", 5),
             ],
         )
 
