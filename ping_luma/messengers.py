@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List
 
 
@@ -13,6 +13,11 @@ class Messenger:
     description: str  # one-line English description (internal use)
     website: str  # canonical homepage URL
 
+    call_capable: bool = False
+    stun_hosts: List[str] = field(default_factory=list)
+    turn_hosts: List[str] = field(default_factory=list)
+    calls_global: bool = False
+
 
 MESSENGERS: List[Messenger] = [
     Messenger(
@@ -24,6 +29,10 @@ MESSENGERS: List[Messenger] = [
         availability="global",
         description="Messaging and mobile-payment app by Bank Melli Iran",
         website="https://bale.ai",
+        call_capable=True,
+        stun_hosts=["stun.bale.ai", "tapi.bale.ai"],
+        turn_hosts=["turn.bale.ai:3478", "turn.bale.ai:5349"],
+        calls_global=True,
     ),
     Messenger(
         id="eitaa",
@@ -34,6 +43,10 @@ MESSENGERS: List[Messenger] = [
         availability="mixed",
         description="Messaging app with an Islamic-values focus",
         website="https://eitaa.com",
+        call_capable=True,
+        stun_hosts=["stun.eitaa.com"],
+        turn_hosts=["turn.eitaa.com:3478"],
+        calls_global=False,
     ),
     Messenger(
         id="rubika",
@@ -44,6 +57,10 @@ MESSENGERS: List[Messenger] = [
         availability="mixed",
         description="Social messaging platform by MCI (Hamrah-e-Aval)",
         website="https://rubika.ir",
+        call_capable=True,
+        stun_hosts=["stun.rubika.ir"],
+        turn_hosts=["turn.rubika.ir:3478"],
+        calls_global=False,
     ),
     Messenger(
         id="gap",
@@ -54,6 +71,10 @@ MESSENGERS: List[Messenger] = [
         availability="global",
         description="Cross-platform messenger with channel support",
         website="https://gap.im",
+        call_capable=True,
+        stun_hosts=["stun.gap.im"],
+        turn_hosts=["turn.gap.im:3478", "turn.gap.im:5349"],
+        calls_global=True,
     ),
     Messenger(
         id="igap",
@@ -64,6 +85,10 @@ MESSENGERS: List[Messenger] = [
         availability="global",
         description="Feature-rich messenger with voice and video calls",
         website="https://igap.net",
+        call_capable=True,
+        stun_hosts=["stun.igap.net", "stun2.igap.net"],
+        turn_hosts=["turn.igap.net:3478", "turn.igap.net:5349"],
+        calls_global=True,
     ),
     Messenger(
         id="soroush",
@@ -74,16 +99,10 @@ MESSENGERS: List[Messenger] = [
         availability="mixed",
         description="State-affiliated messenger from IRIB (Iranian state broadcasting)",
         website="https://soroushapp.com",
-    ),
-    Messenger(
-        id="shad",
-        name="Shad",
-        name_fa="شاد",
-        probe_urls=["https://shad.ir", "https://app.shad.ir"],
-        dns_hosts=["shad.ir", "app.shad.ir"],
-        availability="iran",
-        description="Ministry of Education messenger for students and teachers",
-        website="https://shad.ir",
+        call_capable=True,
+        stun_hosts=["stun.soroushapp.com"],
+        turn_hosts=["turn.soroushapp.com:3478"],
+        calls_global=False,
     ),
 ]
 
