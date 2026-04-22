@@ -2,31 +2,28 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>بررسی پیام‌رسان‌های ایرانی</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+    <title>پینگ‌لوما — بررسی پیام‌رسان‌های ایرانی</title>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;900&display=swap"
           rel="stylesheet"/>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --ink: #0e0d0b;
-            --paper: #f0ebe0;
-            --warm: #d8d0bc;
-            --border: #2a2820;
-            --muted: #7a7060;
-            --dim: #a09880;
-            --amber: #c47a1a;
-            --amber-lt: #e89820;
-            --green: #1a7a3c;
-            --green-lt: #22a050;
-            --red: #9a1a1a;
-            --red-lt: #c42828;
-            --warn: #8a5a00;
-            --warn-lt: #b87a10;
-            --blue: #1a5fd0;
-            --blue-lt: #3a7ff0;
-            --mono: 'IBM Plex Mono', monospace;
+            --bg: #0f0e0c;
+            --surface: #181714;
+            --border: #262420;
+            --amber: #d4871a;
+            --amber-lt: #f0a030;
+            --green: #22a050;
+            --red: #c83030;
+            --warn: #c08010;
+            --muted: #706858;
+            --dim: #a09080;
+            --text: #f0ebe0;
             --fa: 'Vazirmatn', sans-serif;
+            --radius: 14px;
+            --tg-color-scheme: dark;
         }
 
         *, *::before, *::after {
@@ -35,778 +32,385 @@
             padding: 0;
         }
 
+        html {
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
-            background: var(--ink);
-            color: var(--paper);
+            background: var(--tg-theme-bg-color, var(--bg));
+            color: var(--tg-theme-text-color, var(--text));
             font-family: var(--fa);
-            min-height: 100vh;
+            min-height: 100dvh;
             direction: rtl;
+            overscroll-behavior: none;
         }
 
         .page {
-            max-width: 900px;
+            max-width: 480px;
             margin: 0 auto;
-            padding: 0 1.25rem 5rem;
+            padding: 0 1rem env(safe-area-inset-bottom, 1rem);
         }
 
-        /* ── masthead ── */
-        .masthead {
-            border-bottom: 3px solid var(--amber);
-            padding: 2rem 0 1.25rem;
-            margin-bottom: 2.25rem;
+        /* ── header ── */
+        .header {
+            padding: 1.5rem 0 1.1rem;
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.4rem;
         }
 
-        .site-name {
-            font-size: clamp(2rem, 6vw, 3rem);
+        .logo {
+            font-size: 1.55rem;
             font-weight: 900;
-            line-height: 1;
+            color: var(--text);
             letter-spacing: -.02em;
-            color: #fff;
+            line-height: 1;
         }
 
-        .site-name .accent {
+        .logo span {
             color: var(--amber-lt);
         }
 
-        .site-meta {
-            display: flex;
-            flex-direction: column;
-            gap: .3rem;
-            align-items: flex-start;
-        }
-
-        .site-sub {
-            font-family: var(--mono);
-            font-size: .6rem;
+        .header-sub {
+            font-size: .68rem;
             color: var(--muted);
-            letter-spacing: .07em;
-            text-transform: uppercase;
+            text-align: left;
         }
 
-        .site-date {
-            font-family: var(--mono);
-            font-size: .58rem;
-            color: var(--muted);
-            direction: ltr;
-        }
-
-        /* ── section ── */
-        .section {
-            margin-bottom: 2.5rem;
-        }
-
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-            margin-bottom: 1rem;
-            padding-bottom: .5rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .section-num {
-            font-family: var(--mono);
-            font-size: .58rem;
-            color: var(--amber);
-            font-weight: 600;
-            letter-spacing: .12em;
-        }
-
-        .section-title {
-            font-size: .75rem;
-            font-weight: 700;
-            color: var(--muted);
-            letter-spacing: .05em;
-            text-transform: uppercase;
-        }
-
-        /* ── capabilities table ── */
-        .cap-table {
+        /* ── scan button ── */
+        .scan-btn {
             width: 100%;
-            border-collapse: collapse;
-            font-size: .81rem;
-        }
-
-        .cap-table thead tr {
-            border-bottom: 1px solid #252318;
-        }
-
-        .cap-table th {
-            padding: .55rem .7rem;
-            font-family: var(--mono);
-            font-size: .56rem;
-            font-weight: 600;
-            color: var(--muted);
-            letter-spacing: .07em;
-            text-transform: uppercase;
-            text-align: center;
-            white-space: nowrap;
-        }
-
-        .cap-table th:first-child {
-            text-align: right;
-        }
-
-        .cap-table tbody tr {
-            border-bottom: 1px solid #1c1b16;
-            transition: background .15s;
-        }
-
-        .cap-table tbody tr:hover {
-            background: #131208;
-        }
-
-        .cap-table tbody tr:last-child {
-            border-bottom: none;
-        }
-
-        .cap-table td {
-            padding: .7rem;
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        .cap-table td:first-child {
-            text-align: right;
-        }
-
-        .messenger-cell {
-            display: flex;
-            align-items: center;
-            gap: .65rem;
-        }
-
-        .messenger-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 1rem;
+            background: var(--amber);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
+            font-family: var(--fa);
             font-size: 1rem;
-            font-weight: 900;
-            flex-shrink: 0;
-            line-height: 1;
-        }
-
-        .icon-bale {
-            background: #1a73c8;
-            color: #fff;
-        }
-
-        .icon-eitaa {
-            background: #e06a10;
-            color: #fff;
-        }
-
-        .icon-rubika {
-            background: #1a5fd0;
-            color: #fff;
-        }
-
-        .icon-gap {
-            background: #18a03a;
-            color: #fff;
-        }
-
-        .icon-igap {
-            background: #6220aa;
-            color: #fff;
-        }
-
-        .icon-soroush {
-            background: #2850c8;
-            color: #fff;
-        }
-
-        .messenger-names {
-            display: flex;
-            flex-direction: column;
-            gap: .08rem;
-        }
-
-        .messenger-name-en {
-            font-size: .78rem;
             font-weight: 700;
-            color: #fff;
-        }
-
-        .messenger-name-fa {
-            font-size: .66rem;
-            color: var(--muted);
-        }
-
-        .cap {
-            display: inline-flex;
+            cursor: pointer;
+            display: flex;
             align-items: center;
             justify-content: center;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
+            gap: .55rem;
+            margin-bottom: 1.25rem;
+            transition: background .18s, transform .1s;
+            -webkit-user-select: none;
         }
 
-        .cap-yes {
-            background: rgba(26, 122, 60, .14);
-            border: 1px solid rgba(34, 160, 80, .28);
-            color: var(--green-lt);
-            font-size: .72rem;
-        }
-
-        .cap-no {
-            background: rgba(154, 26, 26, .12);
-            border: 1px solid rgba(196, 40, 40, .2);
-            color: var(--red-lt);
-            font-size: .72rem;
-        }
-
-        .cap-part {
-            background: rgba(138, 90, 0, .12);
-            border: 1px solid rgba(184, 122, 16, .25);
-            color: var(--warn-lt);
-            font-size: .68rem;
-        }
-
-        .vpn-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: .3rem;
-            padding: .2rem .55rem;
-            border-radius: 4px;
-            font-family: var(--mono);
-            font-size: .57rem;
-            font-weight: 600;
-            white-space: nowrap;
-            letter-spacing: .03em;
-        }
-
-        .vpn-yes {
-            background: rgba(26, 122, 60, .13);
-            color: var(--green-lt);
-            border: 1px solid rgba(34, 160, 80, .22);
-        }
-
-        .vpn-part {
-            background: rgba(138, 90, 0, .13);
-            color: var(--warn-lt);
-            border: 1px solid rgba(184, 122, 16, .22);
-        }
-
-        .vpn-no {
-            background: rgba(154, 26, 26, .11);
-            color: var(--red-lt);
-            border: 1px solid rgba(196, 40, 40, .18);
-        }
-
-        .call-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: .3rem;
-            padding: .2rem .55rem;
-            border-radius: 4px;
-            font-family: var(--mono);
-            font-size: .57rem;
-            font-weight: 600;
-            white-space: nowrap;
-            letter-spacing: .03em;
-        }
-
-        .call-yes {
-            background: rgba(26, 122, 60, .13);
-            color: var(--green-lt);
-            border: 1px solid rgba(34, 160, 80, .22);
-        }
-
-        .call-partial {
-            background: rgba(138, 90, 0, .13);
-            color: var(--warn-lt);
-            border: 1px solid rgba(184, 122, 16, .22);
-        }
-
-        .call-vpn {
-            background: rgba(26, 95, 208, .12);
-            color: var(--blue-lt);
-            border: 1px solid rgba(58, 127, 240, .22);
-        }
-
-        .call-no {
-            background: rgba(154, 26, 26, .11);
-            color: var(--red-lt);
-            border: 1px solid rgba(196, 40, 40, .18);
-        }
-
-        .legend {
-            display: flex;
-            gap: 1.25rem;
-            flex-wrap: wrap;
-            margin-top: .85rem;
-            padding-top: .85rem;
-            border-top: 1px solid var(--border);
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: .4rem;
-            font-size: .68rem;
-            color: var(--muted);
-        }
-
-        /* ── call-notes tooltip ── */
-        .has-note {
-            cursor: help;
-            border-bottom: 1px dashed var(--muted);
-        }
-
-        /* ── status bar ── */
-        .status-bar {
-            background: #111009;
-            border: 1px solid var(--border);
-            border-radius: 7px;
-            padding: 1.1rem 1.4rem;
-            margin-bottom: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 1.1rem;
-        }
-
-        .status-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            background: #252318;
-            position: relative;
-        }
-
-        .status-dot.active {
+        .scan-btn:active {
+            transform: scale(.97);
             background: var(--amber-lt);
         }
 
-        .status-dot.active::after {
-            content: '';
-            position: absolute;
-            inset: -4px;
+        .scan-btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── status pill ── */
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: .65rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 1.25rem;
+            font-size: .8rem;
+            color: var(--dim);
+            min-height: 44px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            background: rgba(232, 152, 32, .15);
-            animation: pulse 1.8s infinite;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        .dot.live {
+            background: var(--amber-lt);
+            animation: pulse 1.6s infinite;
+        }
+
+        .dot.ok {
+            background: var(--green);
+        }
+
+        .dot.fail {
+            background: var(--red);
         }
 
         @keyframes pulse {
             0%, 100% {
+                opacity: 1;
                 transform: scale(1);
-                opacity: 1
             }
             50% {
-                transform: scale(2.4);
-                opacity: 0
+                opacity: .5;
+                transform: scale(1.5);
             }
         }
 
-        .status-text {
-            flex: 1;
-            font-size: .82rem;
-            color: var(--dim);
-        }
-
-        .status-text strong {
-            color: #fff;
-        }
-
-        .status-time {
-            font-family: var(--mono);
-            font-size: .6rem;
-            color: var(--muted);
-            direction: ltr;
-        }
-
-        /* ── quick bar ── */
-        .quick-bar {
-            display: none;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: .8rem 1.1rem;
-            margin-bottom: 1rem;
-            align-items: center;
+        /* ── messenger cards ── */
+        .cards {
+            display: flex;
+            flex-direction: column;
             gap: .7rem;
-            font-size: .82rem;
         }
 
-        .quick-bar.visible {
-            display: flex;
-        }
-
-        .quick-bar.ok {
-            border-color: rgba(34, 160, 80, .22);
-        }
-
-        .quick-bar.fail {
-            border-color: rgba(196, 40, 40, .2);
-        }
-
-        .quick-bar-icon {
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-
-        .quick-bar-text {
-            color: var(--dim);
-        }
-
-        .quick-bar-text strong {
-            color: #fff;
-        }
-
-        .quick-bar-lat {
-            font-family: var(--mono);
-            font-size: .65rem;
-            color: var(--muted);
-            margin-right: auto;
-        }
-
-        /* ── buttons ── */
-        .button-row {
-            display: flex;
-            gap: .6rem;
-            flex-wrap: wrap;
-            margin-bottom: 1.25rem;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: .5rem;
-            padding: .65rem 1.35rem;
-            border-radius: 5px;
-            font-family: var(--fa);
-            font-weight: 700;
-            font-size: .83rem;
-            cursor: pointer;
-            border: none;
-            transition: opacity .2s, transform .12s;
-            user-select: none;
-        }
-
-        .btn:active:not(:disabled) {
-            transform: scale(.97);
-        }
-
-        .btn:disabled {
-            opacity: .32;
-            cursor: not-allowed;
-        }
-
-        .btn-primary {
-            background: var(--amber);
-            color: #fff;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: var(--amber-lt);
-        }
-
-        .btn-call {
-            background: #1a5fd0;
-            color: #fff;
-        }
-
-        .btn-call:hover:not(:disabled) {
-            background: var(--blue-lt);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: var(--dim);
+        .card {
+            background: var(--surface);
             border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: border-color .2s;
         }
 
-        .btn-secondary:hover:not(:disabled) {
-            border-color: var(--muted);
-            color: var(--paper);
+        .card.ok {
+            border-color: rgba(34, 160, 80, .3);
         }
 
-        /* ── result grid ── */
-        .result-grid {
-            display: grid;
-            grid-template-columns:repeat(auto-fill, minmax(235px, 1fr));
-            gap: .6rem;
+        .card.warn {
+            border-color: rgba(192, 128, 16, .3);
         }
 
-        .result-card {
-            background: #111009;
-            border: 1px solid var(--border);
-            border-right: 3px solid transparent;
-            border-radius: 7px;
-            padding: .95rem 1rem;
-            transition: border-color .25s;
+        .card.fail {
+            border-color: rgba(200, 48, 48, .3);
         }
 
-        .result-card.ok {
-            border-right-color: var(--green);
-        }
-
-        .result-card.partial {
-            border-right-color: var(--warn-lt);
-        }
-
-        .result-card.fail {
-            border-right-color: var(--red);
-        }
-
-        .result-card.idle {
-            border-right-color: #252318;
-        }
-
-        .card-header {
+        .card-top {
             display: flex;
             align-items: center;
-            gap: .6rem;
-            margin-bottom: .6rem;
+            gap: .75rem;
+            padding: .85rem 1rem;
         }
 
-        .card-names {
-            flex: 1;
-        }
-
-        .card-name-en {
-            font-size: .78rem;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .card-name-fa {
-            font-size: .64rem;
-            color: var(--muted);
-        }
-
-        .card-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
+        .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: .85rem;
+            font-size: 1.1rem;
             font-weight: 900;
             flex-shrink: 0;
+            color: #fff;
         }
 
-        .verdict-badge {
-            font-family: var(--mono);
-            font-size: .56rem;
-            font-weight: 600;
-            padding: .14rem .42rem;
-            border-radius: 3px;
-            letter-spacing: .04em;
-            flex-shrink: 0;
+        .ic-bale {
+            background: #1a73c8;
         }
 
-        .verdict-badge.ok {
-            background: rgba(26, 122, 60, .14);
-            color: var(--green-lt);
+        .ic-eitaa {
+            background: #e06a10;
         }
 
-        .verdict-badge.partial {
-            background: rgba(138, 90, 0, .13);
-            color: var(--warn-lt);
+        .ic-rubika {
+            background: #1a5fd0;
         }
 
-        .verdict-badge.fail {
-            background: rgba(154, 26, 26, .11);
-            color: var(--red-lt);
+        .ic-gap {
+            background: #18a03a;
         }
 
-        .verdict-badge.idle {
-            background: #1a1916;
-            color: var(--muted);
+        .ic-igap {
+            background: #6220aa;
         }
 
-        .card-stats {
-            display: flex;
-            gap: .85rem;
-            font-family: var(--mono);
-            font-size: .6rem;
-            color: var(--muted);
+        .ic-soroush {
+            background: #2850c8;
         }
 
-        .stat-val {
-            color: var(--dim);
+        .card-info {
+            flex: 1;
+            min-width: 0;
         }
 
-        .stat-val.good {
-            color: var(--green-lt);
-        }
-
-        .stat-val.warn {
-            color: var(--warn-lt);
-        }
-
-        .stat-val.bad {
-            color: var(--red-lt);
-        }
-
-        .stat-val.blue {
-            color: var(--blue-lt);
-        }
-
-        /* ── call result grid (section 03) ── */
-        .call-grid {
-            display: grid;
-            grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
-            gap: .6rem;
-        }
-
-        .call-card {
-            background: #111009;
-            border: 1px solid var(--border);
-            border-radius: 7px;
-            padding: 1rem;
-            position: relative;
-        }
-
-        .call-card .cc-header {
+        .card-name {
+            font-size: .9rem;
+            font-weight: 700;
             display: flex;
             align-items: center;
-            gap: .6rem;
-            margin-bottom: .75rem;
+            gap: .4rem;
         }
 
-        .call-card .cc-body {
+        .card-name-fa {
+            font-size: .72rem;
+            color: var(--muted);
+            margin-top: .1rem;
+        }
+
+        .badge {
+            font-size: .62rem;
+            font-weight: 700;
+            padding: .18rem .5rem;
+            border-radius: 5px;
+            white-space: nowrap;
+        }
+
+        .badge-ok {
+            background: rgba(34, 160, 80, .15);
+            color: #22a050;
+        }
+
+        .badge-warn {
+            background: rgba(192, 128, 16, .15);
+            color: #c08010;
+        }
+
+        .badge-fail {
+            background: rgba(200, 48, 48, .13);
+            color: #c83030;
+        }
+
+        .badge-idle {
+            background: rgba(112, 104, 88, .15);
+            color: var(--muted);
+        }
+
+        /* ── card rows ── */
+        .card-rows {
+            border-top: 1px solid var(--border);
+            padding: .6rem 1rem .75rem;
             display: flex;
             flex-direction: column;
             gap: .45rem;
         }
 
-        .probe-row {
+        .row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: .74rem;
+            font-size: .78rem;
         }
 
-        .probe-label {
-            color: var(--muted);
-            font-family: var(--mono);
-            font-size: .6rem;
-        }
-
-        .probe-val {
-            display: flex;
-            align-items: center;
-            gap: .35rem;
-        }
-
-        .stun-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #252318;
-            flex-shrink: 0;
-        }
-
-        .stun-dot.checking {
-            background: var(--amber-lt);
-            animation: pulse 1s infinite;
-        }
-
-        .stun-dot.ok {
-            background: var(--green-lt);
-        }
-
-        .stun-dot.fail {
-            background: var(--red-lt);
-        }
-
-        .stun-dot.warn {
-            background: var(--warn-lt);
-        }
-
-        .lat-tag {
-            font-family: var(--mono);
-            font-size: .58rem;
+        .row-label {
             color: var(--muted);
         }
 
-        .call-verdict-pill {
-            display: inline-block;
-            font-family: var(--mono);
-            font-size: .58rem;
+        .row-val {
             font-weight: 600;
-            padding: .18rem .5rem;
-            border-radius: 3px;
-            letter-spacing: .04em;
         }
 
-        .pill-ok {
-            background: rgba(26, 122, 60, .16);
-            color: var(--green-lt);
-            border: 1px solid rgba(34, 160, 80, .25);
-        }
-
-        .pill-part {
-            background: rgba(138, 90, 0, .15);
-            color: var(--warn-lt);
-            border: 1px solid rgba(184, 122, 16, .25);
-        }
-
-        .pill-fail {
-            background: rgba(154, 26, 26, .13);
-            color: var(--red-lt);
-            border: 1px solid rgba(196, 40, 40, .22);
-        }
-
-        .pill-prop {
-            background: rgba(122, 112, 96, .12);
-            color: var(--dim);
-            border: 1px solid rgba(122, 112, 96, .2);
-        }
-
-        .pill-idle {
-            background: #1a1916;
-            color: var(--muted);
-            border: 1px solid #252318;
-        }
-
-        .divider-mini {
-            height: 1px;
-            background: var(--border);
-            margin: .25rem 0;
-        }
-
-        .vpn-hint {
-            font-size: .67rem;
-            color: var(--muted);
-            display: flex;
+        .tag {
+            display: inline-flex;
             align-items: center;
-            gap: .3rem;
-            margin-top: .3rem;
+            gap: .28rem;
+            font-size: .72rem;
+            font-weight: 600;
+            padding: .14rem .48rem;
+            border-radius: 5px;
         }
 
-        .vpn-hint .lk {
-            color: var(--blue-lt);
+        .tag-ok {
+            background: rgba(34, 160, 80, .13);
+            color: #22a050;
         }
 
-        .vpn-hint .gk {
-            color: var(--green-lt);
+        .tag-warn {
+            background: rgba(192, 128, 16, .13);
+            color: #c08010;
         }
 
-        .vpn-hint .rk {
-            color: var(--red-lt);
+        .tag-fail {
+            background: rgba(200, 48, 48, .12);
+            color: #c83030;
         }
 
-        .vpn-hint .wk {
-            color: var(--warn-lt);
+        .tag-blue {
+            background: rgba(58, 127, 240, .12);
+            color: #4a8ff0;
         }
 
-        .spinner {
+        .tag-dim {
+            background: rgba(112, 104, 88, .12);
+            color: var(--dim);
+        }
+
+        /* ── latency ── */
+        .lat {
+            font-size: .68rem;
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .lat.fast {
+            color: var(--green);
+        }
+
+        .lat.ok {
+            color: #a0c860;
+        }
+
+        .lat.slow {
+            color: var(--warn);
+        }
+
+        /* ── summary bar ── */
+        .summary {
+            margin-top: 1.1rem;
+            padding: .85rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .sum-item {
+            display: flex;
+            flex-direction: column;
+            gap: .25rem;
+        }
+
+        .sum-num {
+            font-size: 1.4rem;
+            font-weight: 900;
+        }
+
+        .sum-lbl {
+            font-size: .65rem;
+            color: var(--muted);
+        }
+
+        .sum-num.ok {
+            color: var(--green);
+        }
+
+        .sum-num.warn {
+            color: var(--warn);
+        }
+
+        .sum-num.fail {
+            color: var(--red);
+        }
+
+        /* ── footer ── */
+        footer {
+            margin-top: 1.8rem;
+            padding: .9rem 0 1rem;
+            border-top: 1px solid var(--border);
+            font-size: .65rem;
+            color: var(--muted);
+            text-align: center;
+            line-height: 1.7;
+        }
+
+        /* ── spinner ── */
+        .spin {
             display: inline-block;
-            width: 11px;
-            height: 11px;
-            border: 2px solid rgba(255, 255, 255, .1);
+            width: 16px;
+            height: 16px;
+            border: 2.5px solid rgba(255, 255, 255, .2);
             border-top-color: #fff;
             border-radius: 50%;
             animation: spin .5s linear infinite;
@@ -819,67 +423,15 @@
             }
         }
 
-        .info-box {
-            background: #0d0c0a;
-            border: 1px solid var(--border);
-            border-right: 3px solid var(--amber);
-            border-radius: 6px;
-            padding: .8rem 1rem;
-            font-size: .76rem;
-            color: var(--dim);
-            line-height: 1.65;
-            margin-bottom: 1.1rem;
-        }
-
-        .info-box strong {
-            color: #fff;
-        }
-
-        .info-box code {
-            font-family: var(--mono);
-            font-size: .68rem;
-            color: var(--amber-lt);
-        }
-
-        footer {
-            margin-top: 3rem;
-            padding-top: 1.1rem;
-            border-top: 1px solid var(--border);
-            font-family: var(--mono);
-            font-size: .58rem;
-            color: var(--muted);
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: .4rem;
-        }
-
-        footer a {
-            color: var(--muted);
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            color: var(--dim);
-        }
-
-        @media (max-width: 600px) {
-            .result-grid, .call-grid {
-                grid-template-columns:1fr;
-            }
-
-            .cap-table th:nth-child(3), .cap-table td:nth-child(3) {
-                display: none;
-            }
-        }
-
-        @media (max-width: 460px) {
-            .button-row {
-                flex-direction: column;
-            }
-
-            .btn {
-                justify-content: center;
+        /* light theme overrides */
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #f5f0e8;
+                --surface: #fff;
+                --border: #e0d8cc;
+                --text: #1a1810;
+                --muted: #8a7a68;
+                --dim: #5a4a3a;
             }
         }
     </style>
@@ -887,339 +439,134 @@
 <body>
 <div class="page">
 
-    <header class="masthead">
-        <div class="site-name">پینگ<span class="accent">لوما</span></div>
-        <div class="site-meta">
-            <div class="site-sub">بررسی پیام‌رسان‌های ایرانی از خارج از ایران</div>
-            <div class="site-date" id="headerDate">—</div>
-        </div>
+    <header class="header">
+        <div class="logo">پینگ<span>لوما</span></div>
+        <div class="header-sub" id="headerDate"></div>
     </header>
 
-    <!-- section 01: capabilities table -->
-    <section class="section">
-        <div class="section-header">
-            <span class="section-num">۰۱</span>
-            <span class="section-title">قابلیت‌ها و دسترسی با VPN</span>
-        </div>
+    <button class="scan-btn" id="btnScan" onclick="runScan()">
+        <span id="btnLabel">بررسی همه پیام‌رسان‌ها</span>
+    </button>
 
-        <table class="cap-table">
-            <thead>
-            <tr>
-                <th>پیام‌رسان</th>
-                <th>تماس صوتی</th>
-                <th>تماس تصویری</th>
-                <th>پیام‌رسانی</th>
-                <th>تماس بدون VPN از خارج</th>
-                <th>تماس با VPN از خارج</th>
-                <th>ثبت‌نام از خارج</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td>
-                    <div class="messenger-cell">
-                        <div class="messenger-icon icon-bale">ب</div>
-                        <div class="messenger-names">
-                            <div class="messenger-name-en">Bale</div>
-                            <div class="messenger-name-fa">بله</div>
-                        </div>
-                    </div>
-                </td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="call-badge call-yes">✓ کار می‌کند</span></td>
-                <td><span class="call-badge call-yes">✓ هر VPN</span></td>
-                <td><span class="call-badge call-vpn" title="نیاز به شماره موبایل ایرانی">📱 شماره ایرانی</span></td>
-            </tr>
-            <tr>
-                <td>
-                    <div class="messenger-cell">
-                        <div class="messenger-icon icon-eitaa">ا</div>
-                        <div class="messenger-names">
-                            <div class="messenger-name-en">Eitaa</div>
-                            <div class="messenger-name-fa">ایتا</div>
-                        </div>
-                    </div>
-                </td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="call-badge call-no">✕ مسدود</span></td>
-                <td><span class="call-badge call-vpn" title="فقط VPN با خروجی ایرانی کار می‌کند">🔒 VPN ایرانی</span>
-                </td>
-                <td><span class="call-badge call-no">✕ مسدود</span></td>
-            </tr>
-            <tr>
-                <td>
-                    <div class="messenger-cell">
-                        <div class="messenger-icon icon-rubika">ر</div>
-                        <div class="messenger-names">
-                            <div class="messenger-name-en">Rubika</div>
-                            <div class="messenger-name-fa">روبیکا</div>
-                        </div>
-                    </div>
-                </td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="call-badge call-no">✕ مسدود</span></td>
-                <td><span class="call-badge call-vpn"
-                          title="فقط VPN با خروجی ایرانی — پروتکل اختصاصی">🔒 VPN ایرانی</span></td>
-                <td><span class="call-badge call-no">✕ مسدود</span></td>
-            </tr>
-            <tr>
-                <td>
-                    <div class="messenger-cell">
-                        <div class="messenger-icon icon-gap">گ</div>
-                        <div class="messenger-names">
-                            <div class="messenger-name-en">Gap</div>
-                            <div class="messenger-name-fa">گپ</div>
-                        </div>
-                    </div>
-                </td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="call-badge call-partial">~ ناپایدار</span></td>
-                <td><span class="call-badge call-yes">✓ هر VPN</span></td>
-                <td><span class="call-badge call-vpn">📱 شماره ایرانی</span></td>
-            </tr>
-            <tr>
-                <td>
-                    <div class="messenger-cell">
-                        <div class="messenger-icon icon-igap">آ</div>
-                        <div class="messenger-names">
-                            <div class="messenger-name-en">iGap</div>
-                            <div class="messenger-name-fa">آی‌گپ</div>
-                        </div>
-                    </div>
-                </td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="call-badge call-yes">✓ کار می‌کند</span></td>
-                <td><span class="call-badge call-yes">✓ هر VPN</span></td>
-                <td><span class="call-badge call-yes">✓ آزاد</span></td>
-            </tr>
-            <tr>
-                <td>
-                    <div class="messenger-cell">
-                        <div class="messenger-icon icon-soroush">س</div>
-                        <div class="messenger-names">
-                            <div class="messenger-name-en">Soroush+</div>
-                            <div class="messenger-name-fa">سروش‌پلاس</div>
-                        </div>
-                    </div>
-                </td>
-                <td><span class="cap cap-part">~</span></td>
-                <td><span class="cap cap-part">~</span></td>
-                <td><span class="cap cap-yes">✓</span></td>
-                <td><span class="call-badge call-no">✕ مسدود</span></td>
-                <td><span class="call-badge call-no">✕ حتی با VPN</span></td>
-                <td><span class="call-badge call-no">✕ مسدود</span></td>
-            </tr>
-            <tr>
-                <td><span class="cap cap-no">✕</span></td>
-                <td><span class="cap cap-no">✕</span></td>
-                <td><span class="cap cap-no">✕</span></td>
-                <td><span class="call-badge call-no">✕ مسدود</span></td>
-                <td><span class="call-badge call-no">✕ حتی با VPN</span></td>
-                <td><span class="call-badge call-no">✕ مسدود</span></td>
-            </tr>
-            </tbody>
-        </table>
+    <div class="status-pill">
+        <div class="dot" id="statusDot"></div>
+        <span id="statusText">برای بررسی دسترسی از شبکه فعلی خود دکمه بالا را بزنید.</span>
+    </div>
 
-        <div class="legend">
-            <div class="legend-item"><span class="cap cap-yes" style="width:17px;height:17px;font-size:.62rem;">✓</span>پشتیبانی
-                کامل
-            </div>
-            <div class="legend-item"><span class="cap cap-part"
-                                           style="width:17px;height:17px;font-size:.58rem;">~</span>ناپایدار
-            </div>
-            <div class="legend-item"><span class="cap cap-no" style="width:17px;height:17px;font-size:.62rem;">✕</span>پشتیبانی
-                ندارد
-            </div>
-            <div class="legend-item"><span class="call-badge call-yes" style="font-size:.53rem;">✓ کار می‌کند</span>از
-                خارج بدون VPN
-            </div>
-            <div class="legend-item"><span class="call-badge call-partial" style="font-size:.53rem;">~ ناپایدار</span>متناوب
-            </div>
-            <div class="legend-item"><span class="call-badge call-vpn" style="font-size:.53rem;">🔒 VPN ایرانی</span>فقط
-                با VPN خروجی ایران
-            </div>
-            <div class="legend-item"><span class="call-badge call-no" style="font-size:.53rem;">✕ مسدود</span>حتی با VPN
-                کار نمی‌کند
-            </div>
-        </div>
-    </section>
+    <div class="cards" id="cards"></div>
 
-    <!-- section 02: live check -->
-    <section class="section">
-        <div class="section-header">
-            <span class="section-num">۰۲</span>
-            <span class="section-title">بررسی زنده پیام‌رسانی از شبکه شما</span>
-        </div>
-
-        <div class="status-bar">
-            <div class="status-dot" id="statusDot"></div>
-            <div class="status-text" id="statusText">برای بررسی دسترسی از شبکه فعلی خود، یکی از دکمه‌های زیر را بزنید.
-            </div>
-            <div class="status-time" id="statusTime"></div>
-        </div>
-
-        <div class="quick-bar" id="quickBar">
-            <div class="quick-bar-icon" id="quickBarIcon"></div>
-            <div class="quick-bar-text" id="quickBarText"></div>
-            <div class="quick-bar-lat" id="quickBarLat"></div>
-        </div>
-
-        <div class="button-row">
-            <button class="btn btn-primary" id="btnScan" onclick="runScan()"><span id="btnScanLabel">بررسی کامل همه پیام‌رسان‌ها</span>
-            </button>
-            <button class="btn btn-secondary" id="btnQuick" onclick="runQuick()"><span id="btnQuickLabel">پینگ سریع — بله</span>
-            </button>
-        </div>
-
-        <div class="result-grid" id="resultGrid" style="display:none;"></div>
-    </section>
-
-    <section class="section">
-        <div class="section-header">
-            <span class="section-num">۰۳</span>
-            <span class="section-title">بررسی زنده تماس صوتی/تصویری (WebRTC / STUN)</span>
-        </div>
-
-        <div class="info-box">
-            <strong>چگونه کار می‌کند:</strong>
-            این بررسی با استفاده از <code>RTCPeerConnection</code> مرورگر، سرورهای STUN/TURN هر پیام‌رسان را تست می‌کند
-            —
-            همان زیرساختی که تماس‌های صوتی و تصویری از آن استفاده می‌کنند.
-            اگر مرورگر بتواند یک کاندیدای ICE از نوع <code>srflx</code> یا <code>relay</code> دریافت کند،
-            تماس واقعی نیز امکان‌پذیر است.
-            پیام‌رسان‌هایی که از پروتکل اختصاصی استفاده می‌کنند (روبیکا، سروش) قابل تست از طریق STUN نیستند.
-        </div>
-
-        <div class="button-row">
-            <button class="btn btn-call" id="btnCallScan" onclick="runCallScan()">
-                <span id="btnCallLabel">بررسی تماس — همه پیام‌رسان‌ها</span>
-            </button>
-        </div>
-
-        <div class="call-grid" id="callGrid"></div>
-    </section>
+    <div class="summary" id="summary" style="display:none;"></div>
 
     <footer>
-        <span>نتایج فقط بازتاب‌دهنده وضعیت شبکه شما هستند — هیچ داده‌ای ذخیره نمی‌شود</span>
-        <a href="https://t.me/ping_luma_bot" target="_blank">@ping_luma_bot</a>
+        نتایج فقط بازتاب‌دهنده وضعیت شبکه <b>شما</b> هستند<br>
+        هیچ داده‌ای ذخیره یا ارسال نمی‌شود
     </footer>
 </div>
 
 <script>
     'use strict';
 
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+        tg.ready();
+        tg.expand();
+
+        if (tg.colorScheme === 'light') {
+            document.documentElement.style.setProperty('--bg', tg.themeParams.bg_color || '#f5f0e8');
+            document.documentElement.style.setProperty('--surface', tg.themeParams.secondary_bg_color || '#fff');
+            document.documentElement.style.setProperty('--text', tg.themeParams.text_color || '#1a1810');
+        }
+    }
+
     const MESSENGERS = [
         {
-            id: 'bale', fa: 'بله', en: 'Bale', letter: 'ب', iconClass: 'icon-bale',
+            id: 'bale', fa: 'بله', en: 'Bale', letter: 'ب', ic: 'ic-bale',
             urls: ['https://tapi.bale.ai', 'https://web.bale.ai'],
             dns: ['tapi.bale.ai', 'web.bale.ai', 'cdn.bale.ai'],
             stun: ['stun:stun.bale.ai:3478', 'stun:tapi.bale.ai:3478'],
-            turn: 'turn.bale.ai',
-            callOutside: 'yes',
-            callVpnAny: true,
-            regOutside: 'sms',
-            protocol: 'webrtc',
-            callNote: 'CDN-fronted — تماس از خارج بدون VPN کار می‌کند',
+            callOutside: 'yes', callVpnAny: true, reg: 'sms',
         },
         {
-            id: 'eitaa', fa: 'ایتا', en: 'Eitaa', letter: 'ا', iconClass: 'icon-eitaa',
+            id: 'eitaa', fa: 'ایتا', en: 'Eitaa', letter: 'ا', ic: 'ic-eitaa',
             urls: ['https://eitaa.com', 'https://api.eitaa.com'],
             dns: ['eitaa.com', 'api.eitaa.com'],
-            stun: ['stun:stun.eitaa.com:3478', 'stun:api.eitaa.com:3478'],
-            turn: 'turn.eitaa.com',
-            callOutside: 'vpn',
-            callVpnAny: false,
-            regOutside: 'no',
-            protocol: 'webrtc',
-            callNote: 'TURN در IP‌های داخلی ایران — فقط VPN ایرانی کافی است',
+            stun: ['stun:stun.eitaa.com:3478'],
+            callOutside: 'vpn', callVpnAny: false, reg: 'no',
         },
         {
-            id: 'rubika', fa: 'روبیکا', en: 'Rubika', letter: 'ر', iconClass: 'icon-rubika',
+            id: 'rubika', fa: 'روبیکا', en: 'Rubika', letter: 'ر', ic: 'ic-rubika',
             urls: ['https://rubika.ir', 'https://getapp.rubika.ir'],
             dns: ['rubika.ir', 'getapp.rubika.ir'],
             stun: [],
-            turn: null,
-            callOutside: 'vpn',
-            callVpnAny: false,
-            regOutside: 'no',
-            protocol: 'proprietary',
-            callNote: 'پروتکل باینری اختصاصی — تست STUN ممکن نیست',
+            callOutside: 'vpn', callVpnAny: false, reg: 'no', proprietary: true,
         },
         {
-            id: 'gap', fa: 'گپ', en: 'Gap', letter: 'گ', iconClass: 'icon-gap',
+            id: 'gap', fa: 'گپ', en: 'Gap', letter: 'گ', ic: 'ic-gap',
             urls: ['https://gap.im', 'https://api.gap.im'],
             dns: ['gap.im', 'api.gap.im'],
-            stun: ['stun:stun.gap.im:3478', 'stun:api.gap.im:3478'],
-            turn: 'turn.gap.im',
-            callOutside: 'partial',
-            callVpnAny: true,
-            regOutside: 'sms',
-            protocol: 'webrtc',
-            callNote: 'پوشش relay متناوب — VPN تجاری بهبود می‌دهد',
+            stun: ['stun:stun.gap.im:3478'],
+            callOutside: 'partial', callVpnAny: true, reg: 'sms',
         },
         {
-            id: 'igap', fa: 'آی‌گپ', en: 'iGap', letter: 'آ', iconClass: 'icon-igap',
+            id: 'igap', fa: 'آی‌گپ', en: 'iGap', letter: 'آ', ic: 'ic-igap',
             urls: ['https://igap.net', 'https://api.igap.net'],
             dns: ['igap.net', 'api.igap.net'],
-            stun: ['stun:stun.igap.net:3478', 'stun:api.igap.net:3478'],
-            turn: 'turn.igap.net',
-            callOutside: 'yes',
-            callVpnAny: true,
-            regOutside: 'yes',
-            protocol: 'webrtc',
-            callNote: 'بهترین گزینه برای تماس از خارج — STUN/TURN بین‌المللی',
+            stun: ['stun:stun.igap.net:3478', 'stun:stun2.igap.net:3478'],
+            callOutside: 'yes', callVpnAny: true, reg: 'yes',
         },
         {
-            id: 'soroush', fa: 'سروش‌پلاس', en: 'Soroush+', letter: 'س', iconClass: 'icon-soroush',
+            id: 'soroush', fa: 'سروش‌پلاس', en: 'Soroush+', letter: 'س', ic: 'ic-soroush',
             urls: ['https://soroushapp.com', 'https://api.soroushapp.com'],
             dns: ['soroushapp.com', 'api.soroushapp.com'],
-            stun: [],              // proprietary — domestic only
-            turn: null,
-            callOutside: 'no',
-            callVpnAny: false,
-            regOutside: 'no',
-            protocol: 'proprietary',
-            callNote: 'زیرساخت دولتی IRIB — تماس حتی با VPN ایرانی قابل اطمینان نیست',
+            stun: [],
+            callOutside: 'no', callVpnAny: false, reg: 'no', proprietary: true,
         },
     ];
 
-    const VERDICT_LABEL = {ok: 'در دسترس', partial: 'ناپایدار', fail: 'مسدود', idle: 'در انتظار'};
+    const CHAT_LABEL = {ok: 'در دسترس', warn: 'ناپایدار', fail: 'مسدود', idle: '—'};
 
-    const CALL_OUTSIDE_META = {
-        yes: {label: 'بدون VPN ✅', cls: 'call-yes'},
-        partial: {label: 'ناپایدار ⚠️', cls: 'call-partial'},
-        vpn: {label: 'VPN ایرانی 🔒', cls: 'call-vpn'},
-        no: {label: 'مسدود ✕', cls: 'call-no'},
-        unknown: {label: 'نامشخص ❓', cls: 'call-no'},
-    };
+    function callTag(callOutside) {
+        const map = {
+            yes: ['tag-ok', '✅ بدون VPN'],
+            partial: ['tag-warn', '⚠️ ناپایدار'],
+            vpn: ['tag-blue', '🔒 VPN ایرانی'],
+            no: ['tag-fail', '❌ مسدود'],
+        };
+        const [cls, txt] = map[callOutside] || ['tag-dim', '❓'];
+        return `<span class="tag ${cls}">${txt}</span>`;
+    }
 
-    (function initHeader() {
-        const d = new Date();
-        document.getElementById('headerDate').textContent =
-            d.toLocaleDateString('fa-IR', {year: 'numeric', month: 'long', day: 'numeric'})
-            + ' — ' + d.toLocaleTimeString('fa-IR', {hour: '2-digit', minute: '2-digit'});
-    })();
+    function vpnTag(m) {
+        if (m.callOutside === 'no') return `<span class="tag tag-fail">❌ VPN کمکی نمی‌کند</span>`;
+        if (m.callVpnAny) return `<span class="tag tag-ok">✅ هر VPN</span>`;
+        return `<span class="tag tag-warn">⚠️ فقط VPN ایرانی</span>`;
+    }
 
-    async function probeUrl(url, timeoutMs = 8000) {
+    function regTag(reg) {
+        const map = {
+            yes: ['tag-ok', '✅ آزاد'],
+            no: ['tag-fail', '❌ مسدود'],
+            sms: ['tag-blue', '📱 شماره ایرانی'],
+        };
+        const [cls, txt] = map[reg] || ['tag-dim', '❓'];
+        return `<span class="tag ${cls}">${txt}</span>`;
+    }
+
+    function latClass(ms) {
+        if (!ms) return '';
+        return ms < 400 ? 'fast' : ms < 900 ? 'ok' : 'slow';
+    }
+
+    async function probeUrl(url, ms = 8000) {
         const t = performance.now();
         try {
             const ctrl = new AbortController();
-            const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+            const timer = setTimeout(() => ctrl.abort(), ms);
             await fetch(url, {mode: 'no-cors', signal: ctrl.signal});
             clearTimeout(timer);
             return {ok: true, lat: Math.round(performance.now() - t)};
         } catch {
-            return {ok: false, lat: Math.round(performance.now() - t)};
+            return {ok: false, lat: null};
         }
     }
 
@@ -1227,59 +574,30 @@
         return new Promise(resolve => {
             const t = performance.now();
             const img = new Image();
-            const timer = setTimeout(() => {
+            const tmr = setTimeout(() => {
                 img.src = '';
-                resolve({ok: false, lat: Math.round(performance.now() - t)});
+                resolve(false);
             }, 5000);
             img.onload = img.onerror = () => {
-                clearTimeout(timer);
-                resolve({ok: true, lat: Math.round(performance.now() - t)});
+                clearTimeout(tmr);
+                resolve(true);
             };
             img.src = `https://${host}/favicon.ico?_=${Date.now()}`;
         });
     }
 
-    async function probeMessenger(messenger) {
-        const [urlResults, dnsResults] = await Promise.all([
-            Promise.all(messenger.urls.map(u => probeUrl(u))),
-            Promise.all(messenger.dns.map(h => probeDns(h))),
-        ]);
-
-        const okUrls = urlResults.filter(r => r.ok).length;
-        const okDns = dnsResults.filter(r => r.ok).length;
-
-        let score = Math.round((okUrls / messenger.urls.length) * 60 + (okDns / messenger.dns.length) * 30);
-        const lats = urlResults.filter(r => r.ok).map(r => r.lat);
-        if (lats.length) {
-            const b = Math.min(...lats);
-            score += b < 500 ? 10 : b < 1200 ? 5 : 0;
-        }
-        score = Math.min(100, score);
-
-        return {
-            score, verdict: score >= 70 ? 'ok' : score >= 30 ? 'partial' : 'fail',
-            latency: lats.length ? Math.min(...lats) : null, okUrls, totalUrls: messenger.urls.length
-        };
-    }
-
-    async function probeStun(stunUrls, timeoutMs = 7000) {
-        if (!stunUrls || stunUrls.length === 0) {
-            return {stun: 'not-applicable', lat: null, candidates: []};
-        }
-        const iceServers = stunUrls.map(u => ({urls: u}));
-        let pc;
+    async function probeStun(stunUrls, ms = 7000) {
+        if (!stunUrls?.length) return null;
         const t = performance.now();
+        let pc, done = false, gotSrflx = false;
+        const candidates = [];
         try {
-            pc = new RTCPeerConnection({iceServers, iceCandidatePoolSize: 2});
+            pc = new RTCPeerConnection({iceServers: stunUrls.map(u => ({urls: u}))});
         } catch {
-            return {stun: 'fail', lat: null, candidates: [], error: 'RTCPeerConnection not supported'};
+            return null;
         }
         return new Promise(resolve => {
-            const candidates = [];
-            let done = false;
-            let gotSrflx = false;
-
-            const finish = (verdict) => {
+            const finish = v => {
                 if (done) return;
                 done = true;
                 clearTimeout(timer);
@@ -1287,252 +605,181 @@
                     pc.close();
                 } catch {
                 }
-                resolve({stun: verdict, lat: Math.round(performance.now() - t), candidates});
+                resolve({ok: v, lat: Math.round(performance.now() - t), candidates});
             };
-
-            const timer = setTimeout(() => {
-                finish(gotSrflx ? 'ok' : candidates.length ? 'host-only' : 'fail');
-            }, timeoutMs);
-
-            pc.onicecandidate = (e) => {
+            const timer = setTimeout(() => finish(gotSrflx), ms);
+            pc.onicecandidate = e => {
                 if (!e.candidate) {
-                    // ICE gathering complete
-                    finish(gotSrflx ? 'ok' : candidates.length ? 'host-only' : 'fail');
+                    finish(gotSrflx);
                     return;
                 }
-                const c = e.candidate;
-                candidates.push({type: c.type, foundation: c.foundation});
-                if (c.type === 'srflx' || c.type === 'relay') {
+                candidates.push(e.candidate.type);
+                if (e.candidate.type === 'srflx' || e.candidate.type === 'relay') {
                     gotSrflx = true;
-                    finish('ok');
+                    finish(true);
                 }
             };
 
             pc.onicegatheringstatechange = () => {
-                if (pc.iceGatheringState === 'complete') {
-                    finish(gotSrflx ? 'ok' : candidates.length ? 'host-only' : 'fail');
-                }
+                if (pc.iceGatheringState === 'complete') finish(gotSrflx);
             };
-
-            pc.createDataChannel('pingluma-probe');
-            pc.createOffer()
-                .then(o => pc.setLocalDescription(o))
-                .catch(() => finish('fail'));
+            pc.createDataChannel('pl');
+            pc.createOffer().then(o => pc.setLocalDescription(o)).catch(() => finish(false));
         });
+    }
+
+    async function probeMessenger(m) {
+        const [urlRes, dnsOk] = await Promise.all([
+            Promise.all(m.urls.map(u => probeUrl(u))),
+            Promise.all(m.dns.map(h => probeDns(h))),
+        ]);
+        const okUrls = urlRes.filter(r => r.ok).length;
+        const okDns = dnsOk.filter(Boolean).length;
+        let score = Math.round((okUrls / m.urls.length) * 60 + (okDns / m.dns.length) * 30);
+        const lats = urlRes.filter(r => r.ok && r.lat).map(r => r.lat);
+        if (lats.length) {
+            const b = Math.min(...lats);
+            score += b < 500 ? 10 : b < 1200 ? 5 : 0;
+        }
+        score = Math.min(100, score);
+        const chatVerdict = score >= 70 ? 'ok' : score >= 30 ? 'warn' : 'fail';
+
+        let callOk = null;
+        if (!m.proprietary && m.stun.length) {
+            const s = await probeStun(m.stun, 7000);
+            callOk = s?.ok ?? false;
+        }
+
+        return {
+            chatVerdict,
+            lat: lats.length ? Math.min(...lats) : null,
+            callOk,
+        };
+    }
+
+    function chatBadge(v) {
+        const cls = {ok: 'badge-ok', warn: 'badge-warn', fail: 'badge-fail', idle: 'badge-idle'}[v] || 'badge-idle';
+        return `<span class="badge ${cls}">${CHAT_LABEL[v] || '—'}</span>`;
+    }
+
+    function callResultTag(m, callOk) {
+        if (callOk === null) return `<span class="tag tag-dim">قابل تست نیست</span>`;
+        if (callOk) return `<span class="tag tag-ok">✅ تماس ممکن</span>`;
+        return `<span class="tag tag-fail">❌ تماس مسدود</span>`;
+    }
+
+    function renderCard(m, result /* null = loading */) {
+        const v = result ? result.chatVerdict : 'idle';
+        const lat = result?.lat;
+        const latHtml = lat
+            ? `<span class="lat ${latClass(lat)}">${lat}ms</span>`
+            : '';
+
+        return `
+  <div class="card ${result ? v : ''}" id="card-${m.id}">
+    <div class="card-top">
+      <div class="icon ${m.ic}">${m.letter}</div>
+      <div class="card-info">
+        <div class="card-name">
+          ${m.en} <span style="color:var(--muted);font-weight:400;font-size:.75rem">${m.fa}</span>
+          ${latHtml}
+        </div>
+        <div class="card-name-fa">${result ? '' : '<span class="spin"></span>'}</div>
+      </div>
+      ${chatBadge(v)}
+    </div>
+    ${result ? `
+    <div class="card-rows">
+      <div class="row">
+        <span class="row-label">💬 چت</span>
+        <span class="row-val">${chatBadge(v)}</span>
+      </div>
+      <div class="row">
+        <span class="row-label">📞 تماس از خارج</span>
+        <span class="row-val">${callResultTag(m, result.callOk)}</span>
+      </div>
+      <div class="row">
+        <span class="row-label">📞 بدون VPN</span>
+        <span class="row-val">${callTag(m.callOutside)}</span>
+      </div>
+      <div class="row">
+        <span class="row-label">🔒 با VPN</span>
+        <span class="row-val">${vpnTag(m)}</span>
+      </div>
+      <div class="row">
+        <span class="row-label">📝 ثبت‌نام</span>
+        <span class="row-val">${regTag(m.reg)}</span>
+      </div>
+    </div>` : ''}
+  </div>`;
     }
 
     let busy = false;
 
-    function setLocked(locked) {
-        ['btnScan', 'btnQuick', 'btnCallScan'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.disabled = locked;
-        });
-    }
-
-    function setStatus(active, html) {
-        document.getElementById('statusDot').className = 'status-dot' + (active ? ' active' : '');
-        document.getElementById('statusText').innerHTML = html;
-        document.getElementById('statusTime').textContent =
-            new Date().toLocaleTimeString('fa-IR', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-    }
-
-    function buildCard(messenger, result) {
-        const verdict = result ? result.verdict : 'idle';
-        const latClass = result && result.latency ? (result.latency < 500 ? 'good' : result.latency < 1200 ? 'warn' : 'bad') : '';
-        const latText = result && result.latency ? `<span class="stat-val ${latClass}">${result.latency}ms</span>` : '<span class="stat-val">—</span>';
-        const scoreClass = result ? (result.score >= 70 ? 'good' : result.score >= 30 ? 'warn' : 'bad') : '';
-        const scoreText = result ? `<span class="stat-val ${scoreClass}">${result.score}</span>` : '<span class="stat-val">—</span>';
-        const srvText = result ? `<span>سرور: <span class="stat-val">${result.okUrls}/${result.totalUrls}</span></span>` : '';
-        return `<div class="result-card ${verdict}" id="card-${messenger.id}">
-      <div class="card-header">
-        <div class="card-icon ${messenger.iconClass}">${messenger.letter}</div>
-        <div class="card-names"><div class="card-name-en">${messenger.en}</div><div class="card-name-fa">${messenger.fa}</div></div>
-        <span class="verdict-badge ${verdict}">${VERDICT_LABEL[verdict]}</span>
-      </div>
-      <div class="card-stats">
-        <span>تأخیر: ${latText}</span>
-        <span>امتیاز: ${scoreText}/100</span>
-        ${srvText}
-      </div>
-    </div>`;
-    }
-
-    async function runQuick() {
-        if (busy) return;
-        busy = true;
-        setLocked(true);
-        document.getElementById('btnQuickLabel').innerHTML = '<span class="spinner"></span>';
-        document.getElementById('quickBar').className = 'quick-bar';
-        document.getElementById('resultGrid').style.display = 'none';
-        setStatus(true, 'در حال پینگ سرور اصلی <strong>بله</strong>…');
-
-        const result = await probeUrl('https://tapi.bale.ai', 6000);
-        const bar = document.getElementById('quickBar');
-
-        if (result.ok) {
-            bar.className = 'quick-bar visible ok';
-            document.getElementById('quickBarIcon').textContent = '✅';
-            document.getElementById('quickBarText').innerHTML = '<strong>بله</strong> از شبکه شما در دسترس است';
-            document.getElementById('quickBarLat').textContent = result.lat + 'ms';
-            setStatus(false, 'سرور بله پاسخ داد.');
-        } else {
-            bar.className = 'quick-bar visible fail';
-            document.getElementById('quickBarIcon').textContent = '❌';
-            document.getElementById('quickBarText').innerHTML = 'سرور اصلی <strong>بله</strong> پاسخ نداد';
-            document.getElementById('quickBarLat').textContent = '';
-            setStatus(false, 'بله از این شبکه پاسخ نداد.');
-        }
-
-        document.getElementById('btnQuickLabel').textContent = 'پینگ سریع — بله';
-        setLocked(false);
-        busy = false;
+    function setStatus(live, txt) {
+        const dot = document.getElementById('statusDot');
+        dot.className = 'dot' + (live ? ' live' : '');
+        document.getElementById('statusText').textContent = txt;
     }
 
     async function runScan() {
         if (busy) return;
         busy = true;
-        setLocked(true);
-        document.getElementById('btnScanLabel').innerHTML = '<span class="spinner"></span> در حال بررسی…';
-        document.getElementById('quickBar').className = 'quick-bar';
+        tg?.HapticFeedback?.impactOccurred('light');
 
-        const grid = document.getElementById('resultGrid');
-        grid.style.display = 'grid';
-        grid.innerHTML = MESSENGERS.map(m => buildCard(m, null)).join('');
-        setStatus(true, `بررسی <strong>${MESSENGERS.length} پیام‌رسان</strong>…`);
-        await Promise.all(MESSENGERS.map(m =>
+        const btn = document.getElementById('btnScan');
+        btn.disabled = true;
+        document.getElementById('btnLabel').innerHTML = '<span class="spin"></span> در حال بررسی…';
+        document.getElementById('summary').style.display = 'none';
+
+        const cards = document.getElementById('cards');
+        cards.innerHTML = MESSENGERS.map(m => renderCard(m, null)).join('');
+        setStatus(true, `بررسی ${MESSENGERS.length} پیام‌رسان از شبکه شما…`);
+
+        const results = new Array(MESSENGERS.length).fill(null);
+
+        await Promise.all(MESSENGERS.map((m, i) =>
             probeMessenger(m).then(r => {
+                results[i] = r;
                 const el = document.getElementById(`card-${m.id}`);
-                if (el) {
-                    const tmp = document.createElement('div');
-                    tmp.innerHTML = buildCard(m, r);
-                    el.replaceWith(tmp.firstElementChild);
-                }
+                if (el) el.outerHTML = renderCard(m, r);
             })
         ));
 
-        const cards = [...document.querySelectorAll('.result-card')];
-        const nOk = cards.filter(c => c.classList.contains('ok')).length;
-        const nP = cards.filter(c => c.classList.contains('partial')).length;
-        const nF = cards.filter(c => c.classList.contains('fail')).length;
-        setStatus(false, `<strong>${nOk}</strong> در دسترس · <strong>${nP}</strong> ناپایدار · <strong>${nF}</strong> مسدود`);
-        document.getElementById('btnScanLabel').textContent = 'بررسی کامل همه پیام‌رسان‌ها';
-        setLocked(false);
+        // summary
+        const nOk = results.filter(r => r?.chatVerdict === 'ok').length;
+        const nWarn = results.filter(r => r?.chatVerdict === 'warn').length;
+        const nFail = results.filter(r => r?.chatVerdict === 'fail').length;
+
+        document.getElementById('summary').style.display = 'flex';
+        document.getElementById('summary').innerHTML = `
+    <div class="sum-item"><div class="sum-num ok">${nOk}</div><div class="sum-lbl">در دسترس</div></div>
+    <div class="sum-item"><div class="sum-num warn">${nWarn}</div><div class="sum-lbl">ناپایدار</div></div>
+    <div class="sum-item"><div class="sum-num fail">${nFail}</div><div class="sum-lbl">مسدود</div></div>
+  `;
+
+        const allOk = nFail === 0 && nWarn === 0;
+        setStatus(false,
+            allOk
+                ? `همه ${nOk} پیام‌رسان از شبکه شما در دسترس هستند ✅`
+                : `${nOk} در دسترس · ${nWarn} ناپایدار · ${nFail} مسدود`
+        );
+        document.getElementById('statusDot').className = `dot ${allOk ? 'ok' : nFail > 0 ? 'fail' : 'live'}`;
+
+        document.getElementById('btnLabel').textContent = 'بررسی مجدد';
+        btn.disabled = false;
         busy = false;
+
+        tg?.HapticFeedback?.notificationOccurred(allOk ? 'success' : 'warning');
     }
 
-    function stunVerdictPill(verdict) {
-        const map = {
-            ok: ['pill-ok', '✅ STUN قابل دسترس'],
-            'host-only': ['pill-part', '⚠️ فقط host — STUN بلاک'],
-            fail: ['pill-fail', '❌ STUN مسدود'],
-            'not-applicable': ['pill-prop', '— پروتکل اختصاصی'],
-            checking: ['pill-idle', '<span class="spinner"></span> در حال بررسی…'],
-            idle: ['pill-idle', 'در انتظار'],
-        };
-        const [cls, text] = map[verdict] || ['pill-idle', verdict];
-        return `<span class="call-verdict-pill ${cls}">${text}</span>`;
-    }
-
-    function stunDotClass(v) {
-        return {
-            ok: 'ok',
-            'host-only': 'warn',
-            fail: 'fail',
-            'not-applicable': '',
-            checking: 'checking',
-            idle: ''
-        }[v] || '';
-    }
-
-    function buildCallCard(m, probeResult /* null = idle, 'checking' = in progress */) {
-        const state = probeResult === 'checking' ? 'checking' : probeResult ? probeResult.stun : 'idle';
-
-        const coMeta = CALL_OUTSIDE_META[m.callOutside] || CALL_OUTSIDE_META.unknown;
-        const vpnText = m.callVpnAny
-            ? `<span class="gk">✓ هر VPN کافی است</span>`
-            : m.callOutside === 'no'
-                ? `<span class="rk">✕ VPN کمکی نمی‌کند</span>`
-                : `<span class="wk">⚠ فقط VPN ایرانی</span>`;
-
-        const regText = {
-            yes: '<span class="gk">✓ آزاد</span>',
-            no: '<span class="rk">✕ مسدود</span>',
-            sms: '<span class="wk">📱 شماره ایرانی</span>'
-        }[m.regOutside] || '—';
-
-        const latText = probeResult && probeResult !== 'checking' && probeResult.lat
-            ? `<span class="lat-tag">${probeResult.lat}ms</span>` : '';
-
-        const candCount = probeResult && probeResult !== 'checking' && probeResult.candidates
-            ? probeResult.candidates.length : 0;
-
-        return `<div class="call-card" id="ccrd-${m.id}">
-      <div class="cc-header">
-        <div class="card-icon ${m.iconClass}" style="width:28px;height:28px;border-radius:6px;">${m.letter}</div>
-        <div class="card-names" style="flex:1">
-          <div class="card-name-en">${m.en}</div>
-          <div class="card-name-fa">${m.fa}</div>
-        </div>
-        <div class="stun-dot ${stunDotClass(state)}"></div>
-      </div>
-      <div class="cc-body">
-        <div class="probe-row">
-          <span class="probe-label">STUN/ICE</span>
-          <span class="probe-val">${stunVerdictPill(state)} ${latText}</span>
-        </div>
-        ${probeResult && probeResult !== 'checking' && probeResult.candidates && probeResult.candidates.length > 0 ? `
-        <div class="probe-row">
-          <span class="probe-label">ICE candidates</span>
-          <span class="probe-val" style="font-family:var(--mono);font-size:.6rem;color:var(--dim);">${candCount} یافت شد</span>
-        </div>` : ''}
-        <div class="divider-mini"></div>
-        <div class="probe-row">
-          <span class="probe-label">بدون VPN</span>
-          <span class="probe-val"><span class="call-badge ${coMeta.cls}" style="font-size:.55rem;">${coMeta.label}</span></span>
-        </div>
-        <div class="probe-row">
-          <span class="probe-label">با VPN</span>
-          <span class="probe-val vpn-hint">${vpnText}</span>
-        </div>
-        <div class="probe-row">
-          <span class="probe-label">ثبت‌نام</span>
-          <span class="probe-val vpn-hint">${regText}</span>
-        </div>
-        <div class="divider-mini"></div>
-        <div style="font-size:.67rem;color:var(--muted);line-height:1.5;">${m.callNote}</div>
-      </div>
-    </div>`;
-    }
-
-    async function runCallScan() {
-        if (busy) return;
-        busy = true;
-        setLocked(true);
-        document.getElementById('btnCallLabel').innerHTML = '<span class="spinner"></span> در حال بررسی تماس…';
-
-        const grid = document.getElementById('callGrid');
-        grid.innerHTML = MESSENGERS.map(m => buildCallCard(m, 'checking')).join('');
-
-        await Promise.all(MESSENGERS.map(async m => {
-            let result;
-            if (m.stun.length === 0) {
-                result = {stun: 'not-applicable', lat: null, candidates: []};
-            } else {
-                result = await probeStun(m.stun, 8000);
-            }
-            const el = document.getElementById(`ccrd-${m.id}`);
-            if (el) {
-                const tmp = document.createElement('div');
-                tmp.innerHTML = buildCallCard(m, result);
-                el.replaceWith(tmp.firstElementChild);
-            }
-        }));
-
-        document.getElementById('btnCallLabel').textContent = 'بررسی تماس — همه پیام‌رسان‌ها';
-        setLocked(false);
-        busy = false;
-    }
+    (function init() {
+        const d = new Date();
+        document.getElementById('headerDate').textContent =
+            d.toLocaleDateString('fa-IR', {month: 'short', day: 'numeric'})
+            + ' — '
+            + d.toLocaleTimeString('fa-IR', {hour: '2-digit', minute: '2-digit'});
+    })();
 </script>
 </body>
 </html>
