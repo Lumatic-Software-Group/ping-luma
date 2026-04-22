@@ -2,20 +2,10 @@ version: "3.9"
 
 services:
   bot:
-    image: ping-luma:latest
+    image: pingluma:latest
     build: .
     restart: unless-stopped
     env_file: .env
-    environment:
-      - BOT_TOKEN=${BOT_TOKEN}
-      - BASE_URL=${BASE_URL:-https://api.telegram.org/bot}
-      - PROXY_URL=${PROXY_URL:-}
-      - CONNECT_TIMEOUT=${CONNECT_TIMEOUT:-30}
-      - READ_TIMEOUT=${READ_TIMEOUT:-30}
-      - WRITE_TIMEOUT=${WRITE_TIMEOUT:-30}
-      - CACHE_TTL=${CACHE_TTL:-300}
-      - AUTO_CHECK_INTERVAL=${AUTO_CHECK_INTERVAL:-15}
-      - ALERT_CHAT_IDS=${ALERT_CHAT_IDS:-}
     logging:
       driver: json-file
       options:
