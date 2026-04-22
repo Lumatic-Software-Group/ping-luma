@@ -3,7 +3,7 @@ import logging
 import time
 from typing import Dict, Tuple
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, WebAppInfo
 from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
@@ -37,58 +37,39 @@ _cooldown: Dict[int, float] = {}
 _last_broadcast_summary: str = ""
 
 MSG_WELCOME = (
-    "<b>خوش آمدید</b> — @ping_luma_bot\n\n"
-    "این ربات بررسی می‌کند که آیا پیام‌رسان‌های ایرانی از شبکه شما قابل دسترس هستند یا خیر.\n\n"
+    "<b>خوش آمدید به پینگ‌لوما</b>\n\n"
+    "بررسی می‌کنیم که پیام‌رسان‌های ایرانی از شبکه شما قابل دسترس هستند یا نه —\n"
+    "هم برای چت و هم برای تماس صوتی و تصویری.\n\n"
     "━━━━━━━━━━━━━━━━━\n"
-    "/scan   — بررسی کامل پیام‌رسان ها)\n"
-    "/quick  — پینگ سریع\n"
-    "/list   — فهرست پیام‌رسان‌های پشتیبانی‌شده\n"
+    "🌐 <b>داشبورد وب</b> — بررسی دقیق از مرورگر شما\n"
+    " <b>بررسی سریع</b> — وضعیت کلی پیام‌رسان‌ها\n"
     "━━━━━━━━━━━━━━━━━\n\n"
-    "پیام‌رسان‌های بررسی‌شده: <b>بله، ایتا، روبیکا، گپ، آی‌گپ، سروش‌پلاس</b>\n\n"
-    "برای شروع یک دکمه را بزنید:"
+    "پیام‌رسان‌های پشتیبانی‌شده:\n"
+    "<b>بله · ایتا · روبیکا · گپ · آی‌گپ · سروش‌پلاس</b>"
 )
 
-MSG_SCAN_RUNNING = (
-    "در حال بررسی همه پیام‌رسان‌های ایرانی…\n"
-    "بررسی ۷ پیام‌رسان به صورت همزمان — معمولاً حدود ۱۵ ثانیه طول می‌کشد."
-)
-
-MSG_COOLDOWN = "لطفاً {secs} ثانیه صبر کنید و سپس دوباره بررسی را اجرا کنید."
-MSG_QUICK_RUNNING = "در حال پینگ سرور اصلی بله…"
-MSG_PROBING = "در حال بررسی <b>{name}</b> — لطفاً صبر کنید…"
+MSG_SCAN_RUNNING = "در حال بررسی پیام‌رسان‌ها… چند ثانیه صبر کنید."
+MSG_QUICK_RUNNING = "در حال بررسی بله و روبیکا…"
+MSG_COOLDOWN = "لطفاً {secs} ثانیه صبر کنید."
+MSG_PROBING = "در حال بررسی <b>{name}</b>…"
 MSG_UNKNOWN = "پیام‌رسان ناشناخته."
-MSG_BACK_MENU = "<b>خوش آمدید</b> — یک گزینه را انتخاب کنید:"
-MSG_STALE_SESSION = (
-    "این نشست منقضی شده.\n"
-    "لطفاً /start بزنید تا منوی جدید باز شود."
-)
+MSG_BACK_MENU = "یک گزینه را انتخاب کنید:"
+MSG_STALE_SESSION = "این نشست منقضی شده.\nلطفاً /start را بزنید."
 
-MSG_QUICK_OK = (
-    "✅ <b>سرور بله از شبکه شما در دسترس است</b>\n"
-    "تأخیر: <code>{lat:.0f}ms</code>\n\n"
-    "برای بررسی همه ۷ پیام‌رسان از /scan استفاده کنید."
-)
-
-MSG_QUICK_FAIL = (
-    "❌ <b>سرور بله از شبکه شما در دسترس نیست</b>\n\n"
-    "برای گزارش کامل از /scan استفاده کنید."
-)
-
-_AVAILABILITY_LABEL = {
-    "global": "در دسترس جهانی",
-    "mixed": "دسترسی ترکیبی",
-    "iran": "مخصوص ایران",
-}
+WEBAPP_URL: str = config.WEBAPP_URL  # e.g. "https://pingluma.app"
 
 
 def _main_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("بررسی کامل", callback_data="scan"),
-            InlineKeyboardButton("پینگ سریع", callback_data="quick"),
+            InlineKeyboardButton(
+                "🌐 بررسی از شبکه شما",
+                web_app=WebAppInfo(url=WEBAPP_URL),
+            ),
         ],
         [
-            InlineKeyboardButton("فهرست پیام‌رسان‌ها", callback_data="list"),
+            InlineKeyboardButton("بررسی سریع — بله و روبیکا", callback_data="quick"),
+            InlineKeyboardButton("فهرست", callback_data="list"),
         ],
     ])
 
@@ -96,21 +77,19 @@ def _main_kb() -> InlineKeyboardMarkup:
 def _detail_kb() -> InlineKeyboardMarkup:
     rows, row = [], []
     for m in MESSENGERS:
-        row.append(InlineKeyboardButton(
-            f"{m.name_fa}", callback_data=f"detail:{m.id}"
-        ))
+        row.append(InlineKeyboardButton(m.name_fa, callback_data=f"detail:{m.id}"))
         if len(row) == 2:
             rows.append(row)
             row = []
     if row:
         rows.append(row)
-    rows.append([InlineKeyboardButton("بازگشت", callback_data="back")])
+    rows.append([InlineKeyboardButton("🔙 بازگشت", callback_data="back")])
     return InlineKeyboardMarkup(rows)
 
 
 def _back_kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("بازگشت به منو", callback_data="back")]
+        [InlineKeyboardButton("🔙 بازگشت به منو", callback_data="back")]
     ])
 
 
@@ -126,10 +105,6 @@ def _mark_scan(chat_id: int) -> None:
 
 
 async def _reject_stale(query) -> bool:
-    """
-    Reject an inline button press if it came from a message sent before this
-    process started. Removes the keyboard so the user cannot press it again.
-    """
     if query.message.date.timestamp() >= BOT_START_TIME:
         return False
     await query.answer(MSG_STALE_SESSION, show_alert=True)
@@ -141,7 +116,6 @@ async def _reject_stale(query) -> bool:
 
 
 async def _do_scan(chat_id: int, reply_fn) -> None:
-    """Run a full scan and send/edit the result message."""
     on_cd, secs = _is_on_cooldown(chat_id)
     if on_cd:
         await reply_fn(
@@ -162,10 +136,24 @@ async def _do_scan(chat_id: int, reply_fn) -> None:
 
 
 async def _do_quick(reply_fn) -> None:
-    """Run a quick ping against Bale and send/edit the result message."""
     status_msg = await reply_fn(MSG_QUICK_RUNNING, parse_mode=ParseMode.HTML)
-    reachable, latency = await asyncio.to_thread(run_quick_ping, "bale")
-    text = MSG_QUICK_OK.format(lat=latency) if reachable else MSG_QUICK_FAIL
+
+    (bale_ok, bale_lat), (rubika_ok, rubika_lat) = await asyncio.gather(
+        asyncio.to_thread(run_quick_ping, "bale"),
+        asyncio.to_thread(run_quick_ping, "rubika"),
+    )
+
+    def _row(ok: bool, lat: float, name: str, name_fa: str) -> str:
+        if ok:
+            return f"✅ <b>{name}</b> ({name_fa})  —  در دسترس  <code>{lat:.0f}ms</code>"
+        return f"❌ <b>{name}</b> ({name_fa})  —  در دسترس نیست"
+
+    text = (
+            "<b>بررسی سریع</b>\n\n"
+            + _row(bale_ok, bale_lat, "Bale", "بله") + "\n"
+            + _row(rubika_ok, rubika_lat, "Rubika", "روبیکا") + "\n\n"
+                                                                "<i>برای بررسی همه پیام‌رسان‌ها از داشبورد وب استفاده کنید.</i>"
+    )
     await status_msg.edit_text(
         text,
         parse_mode=ParseMode.HTML,
@@ -194,11 +182,10 @@ async def cmd_quick(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def cmd_list(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
-    lines = ["<b>پیام‌رسان‌های ایرانی پشتیبانی‌شده</b>\n"]
+    lines = ["<b>پیام‌رسان‌های پشتیبانی‌شده</b>\n"]
     for m in MESSENGERS:
-        avail = _AVAILABILITY_LABEL.get(m.availability, "")
-        lines.append(f"<b>{m.name}</b> ({m.name_fa})  —  {avail}")
-    lines.append("\n<i>برای بررسی جزئیات یک پیام‌رسان روی دکمه‌های زیر بزنید:</i>")
+        lines.append(f"• <b>{m.name}</b> ({m.name_fa})")
+    lines.append("\n<i>برای جزئیات یک پیام‌رسان را انتخاب کنید:</i>")
     await update.message.reply_text(
         "\n".join(lines),
         parse_mode=ParseMode.HTML,
@@ -223,11 +210,10 @@ async def on_button(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
         await _do_quick(query.message.reply_text)
 
     elif data == "list":
-        lines = ["<b>پیام‌رسان‌های ایرانی پشتیبانی‌شده</b>\n"]
+        lines = ["<b>پیام‌رسان‌های پشتیبانی‌شده</b>\n"]
         for m in MESSENGERS:
-            avail = _AVAILABILITY_LABEL.get(m.availability, "")
-            lines.append(f"<b>{m.name}</b> ({m.name_fa})  —  {avail}")
-        lines.append("\n<i>برای بررسی جزئیات یک پیام‌رسان روی دکمه‌های زیر بزنید:</i>")
+            lines.append(f"• <b>{m.name}</b> ({m.name_fa})")
+        lines.append("\n<i>برای جزئیات یک پیام‌رسان را انتخاب کنید:</i>")
         await query.message.reply_text(
             "\n".join(lines),
             parse_mode=ParseMode.HTML,
@@ -259,25 +245,17 @@ async def on_button(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
         )
 
 
-async def _broadcast(app: Application) -> None:  # type: ignore[type-arg]
-    """
-    Run a full scan and notify ALERT_CHAT_IDS if the status summary changed
-    since the last broadcast. Avoids flooding chats with identical reports.
-    """
+async def _broadcast(app: Application) -> None:
     global _last_broadcast_summary
 
     report: ScanReport = await asyncio.to_thread(run_full_scan)
-    summary = f"{len(report.reachable)}/{len(report.results)}"
+    reachable_ids = ",".join(sorted(r.messenger.id for r in report.reachable))
 
-    if summary == _last_broadcast_summary:
+    if reachable_ids == _last_broadcast_summary:
         return
-    _last_broadcast_summary = summary
+    _last_broadcast_summary = reachable_ids
 
-    text = (
-            f"<b>گزارش پینگ‌لوما</b>\n"
-            f"{summary} از پیام‌رسان‌های ایرانی در حال حاضر قابل دسترس هستند.\n\n"
-            + format_scan_report(report)
-    )
+    text = format_scan_report(report)
     for chat_id in config.ALERT_CHAT_IDS:
         try:
             await app.bot.send_message(chat_id, text, parse_mode=ParseMode.HTML)
@@ -286,7 +264,7 @@ async def _broadcast(app: Application) -> None:  # type: ignore[type-arg]
 
 
 def main() -> None:
-    log.info("Starting PingLuma bot — drop_pending_updates=%s", config.DROP_PENDING)
+    log.info("Starting PingLuma bot")
 
     request_kwargs: Dict = dict(
         connect_timeout=config.CONNECT_TIMEOUT,
@@ -318,14 +296,8 @@ def main() -> None:
             interval=config.AUTO_CHECK_INTERVAL * 60,
             first=120,
         )
-        log.info("Background broadcast every %d minutes", config.AUTO_CHECK_INTERVAL)
+        log.info("Background broadcast every %d min", config.AUTO_CHECK_INTERVAL)
 
-    log.info(
-        "PingLuma running | base=%s | cooldown=%ds | boot_ts=%d",
-        config.BASE_URL,
-        config.SCAN_COOLDOWN,
-        BOT_START_TIME,
-    )
     app.run_polling(drop_pending_updates=config.DROP_PENDING)
 
 
