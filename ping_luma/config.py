@@ -33,15 +33,16 @@ CONNECT_TIMEOUT: float = _float("CONNECT_TIMEOUT", 30)
 READ_TIMEOUT: float = _float("READ_TIMEOUT", 30)
 WRITE_TIMEOUT: float = _float("WRITE_TIMEOUT", 30)
 
-# polling True  = discard queued updates on startup so code changes take effect
-#         immediately and users never see responses to old commands.
-# polling False = process all queued updates.
-# override via .env:  DROP_PENDING=false
+# Set in .env:  WEBAPP_URL=https://pingluma.app
+WEBAPP_URL: str = os.getenv("WEBAPP_URL", "https://pingluma.app")
+
+# True  = discard queued updates on startup (recommended during development)
+# False = process all queued updates
 DROP_PENDING: bool = _bool("DROP_PENDING", True)
 
-# rate limit min seconds between scans per user.
+# Minimum seconds between /scan calls per user
 SCAN_COOLDOWN: int = _int("SCAN_COOLDOWN", 30)
 
-# background broadcast Interval in minutes between automatic global-status checks (0 = disabled).
+# Minutes between automatic global-status checks (0 = disabled)
 AUTO_CHECK_INTERVAL: int = _int("AUTO_CHECK_INTERVAL", 30)
 ALERT_CHAT_IDS: List[int] = _list_int("ALERT_CHAT_IDS")
