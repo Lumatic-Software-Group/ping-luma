@@ -64,7 +64,11 @@ jobs:
           publish_branch: gh-pages
           force_orphan: true
 
+      # Without a server reachable on port 22 from the internet, leave this off:
+      # Settings → Secrets and variables → Actions → Variables → DEPLOY_VIA_SSH
+      # must be exactly "true" to run SSH deploy. Unset / anything else = skip.
       - name: Deploy bot via SSH
+        if: ${{ vars.DEPLOY_VIA_SSH == 'true' }}
         uses: appleboy/ssh-action@v1
         with:
           host:     ${{ secrets.DEPLOY_HOST }}
@@ -72,7 +76,8 @@ jobs:
           key:      ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             cd /opt/pingluma
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pingluma:latest
+            export PINGLUMA_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/pingluma:latest
+            docker compose pull
             docker compose down --remove-orphans
             docker compose up -d
             docker image prune -f

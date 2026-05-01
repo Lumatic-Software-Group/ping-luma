@@ -2,7 +2,8 @@ version: "3.9"
 
 services:
   bot:
-    image: pingluma:latest
+    # Remote deploy: set PINGLUMA_IMAGE=yourdockerhub/pingluma:latest in .env (or export before compose).
+    image: ${PINGLUMA_IMAGE:-pingluma:latest}
     build: .
     restart: unless-stopped
     env_file: .env
