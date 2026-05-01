@@ -1,0 +1,54 @@
+name: iran-reference-probe
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write   # we commit the refreshed JSON back to the repo
+
+concurrency:
+  group: iran-reference-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: self-hosted
+    timeout-minutes: 8
+
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ping-luma
+        # Pinned to a specific commit/tag in production. For first-run
+        # convenience this fetches the latest main; you can pin a tag
+        # with @v1.0.0 once you cut releases.
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Probe and write iran-ref.json
+        run: |
+          python -m ping_luma.publish_iran_reference \
+              --output iran-ref.json \
+              --pretty
+
+      - name: Commit and push if changed
+        run: |
+          set -e
+          if git diff --quiet iran-ref.json; then
+            echo "No changes — skipping commit."
+            exit 0
+          fi
+          git config user.email "iran-ref-bot@users.noreply.github.com"
+          git config user.name  "iran-ref-bot"
+          git add iran-ref.json
+          git commit -m "iran-ref: refresh $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git push
