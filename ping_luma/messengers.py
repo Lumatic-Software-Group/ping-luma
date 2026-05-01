@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -7,24 +7,25 @@ class Messenger:
     id: str
     name: str
     name_fa: str
-    probe_urls: List[str]
-    dns_hosts: List[str]
+    probe_urls: list[str]
+    dns_hosts: list[str]
     availability: str
     description: str
     website: str
 
     call_protocol: str = "webrtc"
     call_capable: bool = False
-    call_outside_iran: str = "unknown"
-    call_vpn_any: bool = False  # True = any VPN works; False = Iranian-exit only
-    registration_outside_iran: str = "no"  # "yes" | "no" | "sms"
+
+    expected_call_outside_iran: str = "unknown"
+    expected_call_vpn_any: bool = False
+    expected_registration_outside_iran: str = "no"
     call_notes: str = ""
 
-    stun_hosts: List[str] = field(default_factory=list)
-    turn_host: Optional[str] = None  # primary TURN host (no port)
+    stun_hosts: list[str] = field(default_factory=list)
+    turn_host: Optional[str] = None
 
 
-MESSENGERS: List[Messenger] = [
+MESSENGERS: list[Messenger] = [
     Messenger(
         id="bale",
         name="Bale",
@@ -36,10 +37,10 @@ MESSENGERS: List[Messenger] = [
         website="https://bale.ai",
         call_protocol="webrtc",
         call_capable=True,
-        call_outside_iran="yes",
-        call_vpn_any=True,
-        registration_outside_iran="sms",
-        call_notes="CDN-fronted — calls work from outside Iran without VPN",
+        expected_call_outside_iran="yes",
+        expected_call_vpn_any=True,
+        expected_registration_outside_iran="sms",
+        call_notes="CDN-fronted — calls usually work from outside Iran without VPN",
         stun_hosts=["stun.bale.ai", "tapi.bale.ai"],
         turn_host="turn.bale.ai",
     ),
@@ -54,10 +55,10 @@ MESSENGERS: List[Messenger] = [
         website="https://eitaa.com",
         call_protocol="webrtc",
         call_capable=True,
-        call_outside_iran="vpn",
-        call_vpn_any=False,
-        registration_outside_iran="no",
-        call_notes="TURN servers on Iranian IPs — only Iranian-exit VPN works",
+        expected_call_outside_iran="vpn",
+        expected_call_vpn_any=False,
+        expected_registration_outside_iran="no",
+        call_notes="TURN servers on Iranian IPs — only Iranian-exit VPN typically works",
         stun_hosts=["stun.eitaa.com"],
         turn_host="turn.eitaa.com",
     ),
@@ -72,10 +73,10 @@ MESSENGERS: List[Messenger] = [
         website="https://rubika.ir",
         call_protocol="proprietary",
         call_capable=True,
-        call_outside_iran="vpn",
-        call_vpn_any=False,
-        registration_outside_iran="no",
-        call_notes="Proprietary binary protocol — only Iranian-exit VPN works",
+        expected_call_outside_iran="vpn",
+        expected_call_vpn_any=False,
+        expected_registration_outside_iran="no",
+        call_notes="Proprietary binary protocol — only Iranian-exit VPN typically works",
         stun_hosts=[],
         turn_host=None,
     ),
@@ -90,9 +91,9 @@ MESSENGERS: List[Messenger] = [
         website="https://gap.im",
         call_protocol="webrtc",
         call_capable=True,
-        call_outside_iran="partial",
-        call_vpn_any=True,
-        registration_outside_iran="sms",
+        expected_call_outside_iran="partial",
+        expected_call_vpn_any=True,
+        expected_registration_outside_iran="sms",
         call_notes="Intermittent relay coverage — commercial VPN improves reliability",
         stun_hosts=["stun.gap.im"],
         turn_host="turn.gap.im",
@@ -108,10 +109,10 @@ MESSENGERS: List[Messenger] = [
         website="https://igap.net",
         call_protocol="webrtc",
         call_capable=True,
-        call_outside_iran="yes",
-        call_vpn_any=True,
-        registration_outside_iran="yes",
-        call_notes="Best option for calls from outside — international STUN/TURN",
+        expected_call_outside_iran="yes",
+        expected_call_vpn_any=True,
+        expected_registration_outside_iran="yes",
+        call_notes="International STUN/TURN — typically the best option for calls from abroad",
         stun_hosts=["stun.igap.net", "stun2.igap.net"],
         turn_host="turn.igap.net",
     ),
@@ -126,14 +127,13 @@ MESSENGERS: List[Messenger] = [
         website="https://soroushapp.com",
         call_protocol="proprietary",
         call_capable=True,
-        call_outside_iran="no",
-        call_vpn_any=False,
-        registration_outside_iran="no",
+        expected_call_outside_iran="no",
+        expected_call_vpn_any=False,
+        expected_registration_outside_iran="no",
         call_notes="State IRIB infrastructure — calls unreliable even with Iranian VPN",
         stun_hosts=[],
         turn_host=None,
     ),
 ]
 
-# fast lookup by id — used throughout the codebase.
-MESSENGER_BY_ID: Dict[str, Messenger] = {m.id: m for m in MESSENGERS}
+MESSENGER_BY_ID: dict[str, Messenger] = {m.id: m for m in MESSENGERS}
