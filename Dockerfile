@@ -1,10 +1,10 @@
-FROM python:3.9-slim AS builder
+FROM python:3.11-slim AS builder
 
 WORKDIR /build
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-FROM python:3.9-slim
+FROM python:3.11-slim
 LABEL org.opencontainers.image.title="pingluma"
 LABEL org.opencontainers.image.description="Iranian messenger global connectivity bot — @ping_luma_bot"
 
@@ -17,7 +17,10 @@ COPY web/       ./web/
 
 USER pingluma
 
+# Healthcheck verifies the package imports cleanly with the expected
+# messenger registry. A truly comprehensive check would need a sidecar
+# HTTP endpoint; this is a minimum viable signal.
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-  CMD python -c "from ping_luma.messengers import MESSENGERS; assert len(MESSENGERS)==6; print('ok')"
+  CMD python -c "from ping_luma.messengers import MESSENGERS; assert len(MESSENGERS)==6; from ping_luma import bot, formatters, advice, iran_reference; print('ok')"
 
 CMD ["python", "-m", "ping_luma.bot"]
