@@ -1,0 +1,6 @@
+{
+  "_meta": {
+    "refreshed_at": null,
+    "note": "Run `python -m scripts.refresh_asn_map` to populate this file with live data from bgpview.io. The placeholders below keep the ASN classifier silent until a real refresh is performed."
+  }
+}
