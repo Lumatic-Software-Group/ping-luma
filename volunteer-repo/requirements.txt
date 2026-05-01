@@ -1,1 +1,0 @@
-ping-luma @ git+https://github.com/abbasiandev/ping-luma.git@main
