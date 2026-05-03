@@ -22,6 +22,7 @@ from telegram.ext import (
 from telegram.request import HTTPXRequest
 
 from ping_luma import config
+from ping_luma import paas_health
 from ping_luma.asn import AsnMap
 from ping_luma.crowdsource import CrowdSourceStore
 from ping_luma.formatters import (
@@ -280,6 +281,8 @@ def main() -> None:
     log.info("Starting PingLuma bot")
     if not config.BOT_TOKEN:
         raise SystemExit("BOT_TOKEN is not set")
+
+    paas_health.start_background()
 
     request_kwargs: dict = dict(
         connect_timeout=config.CONNECT_TIMEOUT,
