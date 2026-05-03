@@ -7,6 +7,8 @@ import logging
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
     Update,
     WebAppInfo,
 )
@@ -21,8 +23,7 @@ from telegram.ext import (
 )
 from telegram.request import HTTPXRequest
 
-from ping_luma import config
-from ping_luma import paas_health
+from ping_luma import config, paas_health
 from ping_luma.asn import AsnMap
 from ping_luma.crowdsource import CrowdSourceStore
 from ping_luma.formatters import (
@@ -59,17 +60,21 @@ MSG_BAD_PAYLOAD = (
     "داده‌ی دریافت‌شده از داشبورد قابل خواندن نبود. لطفاً دوباره تلاش کنید."
 )
 
+# reply keyboard: Telegram.WebApp.sendData
+# from a KeyboardButton(web_app=...)
+# See https://core.telegram.org/bots/webapps#initializing-mini-apps (sendData).
+BTN_WEBAPP = "🌐 بررسی از شبکه شما"
+BTN_LIST = "📋 فهرست پیام‌رسان‌ها"
 
-def _main_kb() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([
+
+def _main_reply_kb() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
         [
-            InlineKeyboardButton(
-                "🌐 بررسی از شبکه شما",
-                web_app=WebAppInfo(url=config.WEBAPP_URL),
-            ),
+            [KeyboardButton(text=BTN_WEBAPP, web_app=WebAppInfo(url=config.WEBAPP_URL))],
+            [KeyboardButton(text=BTN_LIST)],
         ],
-        [InlineKeyboardButton("📋 فهرست پیام‌رسان‌ها", callback_data="list")],
-    ])
+        resize_keyboard=True,
+    )
 
 
 def _detail_kb() -> InlineKeyboardMarkup:
@@ -95,7 +100,7 @@ async def cmd_start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         MSG_WELCOME,
         parse_mode=ParseMode.HTML,
-        reply_markup=_main_kb(),
+        reply_markup=_main_reply_kb(),
     )
 
 
@@ -142,7 +147,7 @@ async def on_button(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
         await query.message.reply_text(
             MSG_BACK_MENU,
             parse_mode=ParseMode.HTML,
-            reply_markup=_main_kb(),
+            reply_markup=_main_reply_kb(),
         )
 
 
@@ -180,7 +185,7 @@ async def on_webapp_data(
     await update.message.reply_text(
         text,
         parse_mode=ParseMode.HTML,
-        reply_markup=_main_kb(),
+        reply_markup=_main_reply_kb(),
         disable_web_page_preview=True,
     )
 
@@ -309,6 +314,9 @@ def main() -> None:
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("help", cmd_help))
     app.add_handler(CommandHandler("list", cmd_list))
+    app.add_handler(
+        MessageHandler(filters.TEXT & filters.Regex(f"^{BTN_LIST}$"), cmd_list)
+    )
     app.add_handler(CallbackQueryHandler(on_button))
     app.add_handler(
         MessageHandler(filters.StatusUpdate.WEB_APP_DATA, on_webapp_data)
