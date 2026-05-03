@@ -10,7 +10,6 @@ class Messenger:
     probe_urls: list[str]
     dns_hosts: list[str]
     availability: str
-    description: str
     website: str
 
     call_protocol: str = "webrtc"
@@ -33,7 +32,6 @@ MESSENGERS: list[Messenger] = [
         probe_urls=["https://tapi.bale.ai", "https://web.bale.ai"],
         dns_hosts=["tapi.bale.ai", "web.bale.ai", "cdn.bale.ai"],
         availability="global",
-        description="Messaging and mobile-payment app by Bank Melli Iran",
         website="https://bale.ai",
         call_protocol="webrtc",
         call_capable=True,
@@ -51,7 +49,6 @@ MESSENGERS: list[Messenger] = [
         probe_urls=["https://eitaa.com", "https://api.eitaa.com"],
         dns_hosts=["eitaa.com", "api.eitaa.com"],
         availability="mixed",
-        description="Messaging app with an Islamic-values focus",
         website="https://eitaa.com",
         call_protocol="webrtc",
         call_capable=True,
@@ -69,7 +66,6 @@ MESSENGERS: list[Messenger] = [
         probe_urls=["https://rubika.ir", "https://getapp.rubika.ir"],
         dns_hosts=["rubika.ir", "getapp.rubika.ir"],
         availability="mixed",
-        description="Social messaging platform by MCI (Hamrah-e-Aval)",
         website="https://rubika.ir",
         call_protocol="proprietary",
         call_capable=True,
@@ -87,7 +83,6 @@ MESSENGERS: list[Messenger] = [
         probe_urls=["https://gap.im", "https://api.gap.im"],
         dns_hosts=["gap.im", "api.gap.im"],
         availability="global",
-        description="Cross-platform messenger with channel support",
         website="https://gap.im",
         call_protocol="webrtc",
         call_capable=True,
@@ -105,7 +100,6 @@ MESSENGERS: list[Messenger] = [
         probe_urls=["https://igap.net", "https://api.igap.net"],
         dns_hosts=["igap.net", "api.igap.net"],
         availability="global",
-        description="Feature-rich messenger with voice and video calls",
         website="https://igap.net",
         call_protocol="webrtc",
         call_capable=True,
@@ -123,7 +117,6 @@ MESSENGERS: list[Messenger] = [
         probe_urls=["https://soroushapp.com", "https://api.soroushapp.com"],
         dns_hosts=["soroushapp.com", "api.soroushapp.com"],
         availability="mixed",
-        description="State-affiliated messenger from IRIB",
         website="https://soroushapp.com",
         call_protocol="proprietary",
         call_capable=True,

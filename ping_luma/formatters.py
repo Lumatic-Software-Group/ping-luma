@@ -140,7 +140,6 @@ def format_messenger_info(m: Messenger) -> str:
 
     lines = [
         f"<b>{m.name}</b> ({m.name_fa})",
-        f"<i>{m.description}</i>",
         "",
         f"🌐 <a href=\"{m.website}\">{m.website}</a>",
         f"📝 {reg}",
@@ -158,7 +157,7 @@ def format_messenger_info(m: Messenger) -> str:
 def format_messenger_list() -> str:
     lines = ["<b>پیام‌رسان‌های پشتیبانی‌شده</b>", ""]
     for m in MESSENGERS:
-        lines.append(f"• <b>{m.name}</b> ({m.name_fa}) — {m.description}")
+        lines.append(f"• <b>{m.name}</b> ({m.name_fa})")
     lines += [
         "",
         "<i>برای جزئیات یک پیام‌رسان را انتخاب کنید.</i>",

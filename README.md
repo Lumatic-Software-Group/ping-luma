@@ -15,14 +15,14 @@ that's measured is the one your phone or laptop is sitting on.
 
 ## Supported Messengers
 
-| Messenger | فارسی | Availability | Description |
-|---|---|---|---|
-| Bale | بله | Global | Messaging + payment by Bank Melli Iran |
-| Eitaa | ایتا | Mixed | Islamic-values messaging app |
-| Rubika | روبیکا | Mixed | Social messenger by MCI (Hamrah-e-Aval) |
-| Gap | گپ | Global | Cross-platform messenger |
-| iGap | آی‌گپ | Global | Feature-rich messenger with VoIP |
-| Soroush Plus | سروش‌پلاس | Mixed | IRIB state-affiliated messenger |
+| Messenger | فارسی | Availability |
+|---|---|---|
+| Bale | بله | Global |
+| Eitaa | ایتا | Mixed |
+| Rubika | روبیکا | Mixed |
+| Gap | گپ | Global |
+| iGap | آی‌گپ | Global |
+| Soroush Plus | سروش‌پلاس | Mixed |
 
 **Availability:**
 
