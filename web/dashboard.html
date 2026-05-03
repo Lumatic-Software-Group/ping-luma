@@ -677,7 +677,19 @@
     }
 
     function sendToBot() {
-        if (!tg || !lastResults) return;
+        const btn = document.getElementById('btnSend');
+        if (!lastResults) {
+            if (btn) btn.textContent = 'ابتدا «بررسی همه پیام‌رسان‌ها» را بزنید';
+            return false;
+        }
+        if (!tg) {
+            if (btn) btn.textContent = 'این صفحه را از داخل تلگرام باز کنید';
+            return false;
+        }
+        if (typeof tg.sendData !== 'function') {
+            tg.showAlert?.('ارسال داده در این حالت پشتیبانی نمی‌شود. از دکمهٔ زیرین تلگرام «بررسی از شبکه شما» داشبورد را باز کنید.');
+            return false;
+        }
         const payload = {
             kind: 'pingluma_result',
             ts: Date.now(),
@@ -687,24 +699,59 @@
                 return r ? {
                     id: m.id,
                     chat_ok: r.chatOk,
-                    call_ok: r.callOk,        // null for proprietary
+                    call_ok: r.callOk,
                     lat: r.lat,
                 } : { id: m.id, chat_ok: false, call_ok: null, lat: null };
             }),
         };
+        const raw = JSON.stringify(payload);
+        if (raw.length > 4096) {
+            tg.showAlert?.('حجم نتیجه برای تلگرام زیاد است.');
+            return false;
+        }
         try {
-            tg.sendData(JSON.stringify(payload));
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'در حال ارسال…';
+            }
+            tg.sendData(raw);
+            if (btn) btn.textContent = 'ارسال شد';
+            setTimeout(() => {
+                try { tg.close(); } catch (_) { /* ignore */ }
+            }, 100);
+            return true;
         } catch (e) {
-            console.warn('tg.sendData failed', e);
+            console.warn('sendData', e);
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'ارسال نتیجه به بات تلگرام';
+            }
+            tg.showAlert?.('خطا در ارسال. دوباره امتحان کنید.');
+            return false;
         }
     }
 
     (function init() {
         const d = new Date();
+        // explicit gregorian (Miladi); fa-IR for Persian.
+        const dateOpts = {
+            calendar: 'gregory',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            numberingSystem: 'latn',
+        };
+        const timeOpts = {
+            calendar: 'gregory',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+            numberingSystem: 'latn',
+        };
         document.getElementById('headerDate').textContent =
-            d.toLocaleDateString('fa-IR', { month: 'short', day: 'numeric' })
+            d.toLocaleDateString('en-GB', dateOpts)
             + ' — '
-            + d.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+            + d.toLocaleTimeString('en-GB', timeOpts);
     })();
 </script>
 </body>
