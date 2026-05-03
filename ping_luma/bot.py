@@ -13,6 +13,7 @@ from telegram import (
     WebAppInfo,
 )
 from telegram.constants import ParseMode
+from telegram.error import Conflict
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -40,6 +41,9 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     level=logging.INFO,
 )
+# httpx/httpcore log every request URL at INFO
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 log = logging.getLogger("PingLuma")
 
 MSG_WELCOME = (
@@ -261,6 +265,8 @@ async def _iran_refresh_loop(app: Application) -> None:
 
 
 async def _post_init(app: Application) -> None:
+    # polling cannot run while a webhook is set; HTTP 409 Conflict.
+    await app.bot.delete_webhook(drop_pending_updates=config.DROP_PENDING)
     iran_client: IranReferenceClient = app.bot_data["iran_ref"]
     if not iran_client.configured:
         return
@@ -269,6 +275,20 @@ async def _post_init(app: Application) -> None:
     except Exception as exc:
         log.warning("initial iran-ref refresh failed: %s", exc)
     app.bot_data["iran_ref_task"] = asyncio.create_task(_iran_refresh_loop(app))
+
+
+async def _on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    err = context.error
+    if isinstance(err, Conflict):
+        log.error(
+            "Telegram 409 Conflict: another client is already calling getUpdates for this "
+            "bot token. Stop every other instance (second container, local run, old VPS), "
+            "scale hosting to one replica, and revoke the token in BotFather if it leaked. "
+            "Original error: %s",
+            err,
+        )
+        return
+    log.exception("Unhandled error while processing update", exc_info=err)
 
 
 async def _post_shutdown(app: Application) -> None:
@@ -321,6 +341,7 @@ def main() -> None:
     app.add_handler(
         MessageHandler(filters.StatusUpdate.WEB_APP_DATA, on_webapp_data)
     )
+    app.add_error_handler(_on_error)
 
     app.run_polling(drop_pending_updates=config.DROP_PENDING)
 
