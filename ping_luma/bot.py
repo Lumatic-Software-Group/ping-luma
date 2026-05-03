@@ -279,10 +279,10 @@ async def _post_shutdown(app: Application) -> None:
 
 def main() -> None:
     log.info("Starting PingLuma bot")
+    # PaaS probes :PORT (e.g. 8080) over HTTP before the process is "healthy" — bind first.
+    paas_health.start_background()
     if not config.BOT_TOKEN:
         raise SystemExit("BOT_TOKEN is not set")
-
-    paas_health.start_background()
 
     request_kwargs: dict = dict(
         connect_timeout=config.CONNECT_TIMEOUT,

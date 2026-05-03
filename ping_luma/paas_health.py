@@ -35,9 +35,21 @@ def start_background() -> None:
     except ValueError:
         port = 8080
 
+    ready = threading.Event()
+    bind_error: list[OSError] = []
+
     def run() -> None:
-        server = HTTPServer(("0.0.0.0", port), _HealthHandler)
-        log.info("Health endpoint http://0.0.0.0:%s/health", port)
-        server.serve_forever()
+        try:
+            server = HTTPServer(("0.0.0.0", port), _HealthHandler)
+            log.info("Health endpoint http://0.0.0.0:%s/health", port)
+            ready.set()
+            server.serve_forever()
+        except OSError as e:
+            bind_error.append(e)
+            ready.set()
 
     threading.Thread(target=run, name="paas-health-http", daemon=True).start()
+    if not ready.wait(timeout=15):
+        raise RuntimeError("health HTTP server did not bind in time")
+    if bind_error:
+        raise bind_error[0]
