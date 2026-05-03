@@ -60,6 +60,12 @@
         .logo { font-size: 1.55rem; font-weight: 900; letter-spacing: -.02em; line-height: 1; }
         .logo span { color: var(--amber-lt); }
         .header-sub { font-size: .68rem; color: var(--muted); text-align: left; }
+        /* Gregorian datetime in English; isolate from page RTL so order stays readable */
+        .header-datetime-ltr {
+            direction: ltr;
+            unicode-bidi: isolate;
+            text-align: left;
+        }
 
         .scan-btn {
             width: 100%;
@@ -274,7 +280,7 @@
 
     <header class="header">
         <div class="logo">پینگ<span>لوما</span></div>
-        <div class="header-sub" id="headerDate"></div>
+        <div class="header-sub header-datetime-ltr" id="headerDate"></div>
     </header>
 
     <button class="scan-btn" id="btnScan" onclick="runScan()">
@@ -582,7 +588,7 @@
         <span class="row-val">${callResultTag(m, result.callOk, result.callBest)}</span>
       </div>
       <div class="row">
-        <span class="row-label">📞 انتظار عمومی</span>
+        <span class="row-label">📞 راهنما</span>
         <span class="row-val">${expectedCallTag(m)}</span>
       </div>
       <div class="row">
@@ -733,25 +739,14 @@
 
     (function init() {
         const d = new Date();
-        // explicit gregorian (Miladi); fa-IR for Persian.
-        const dateOpts = {
-            calendar: 'gregory',
-            year: 'numeric',
-            month: 'short',
+        const datePart = d.toLocaleDateString('en-GB', {
             day: 'numeric',
-            numberingSystem: 'latn',
-        };
-        const timeOpts = {
-            calendar: 'gregory',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-            numberingSystem: 'latn',
-        };
-        document.getElementById('headerDate').textContent =
-            d.toLocaleDateString('en-GB', dateOpts)
-            + ' — '
-            + d.toLocaleTimeString('en-GB', timeOpts);
+            month: 'long',
+            year: 'numeric',
+        });
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        document.getElementById('headerDate').textContent = `${datePart}, ${hh}:${mm}`;
     })();
 </script>
 </body>
