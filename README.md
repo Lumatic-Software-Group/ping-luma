@@ -170,7 +170,7 @@ docker compose logs -f bot
 
 You also need to host `web/dashboard.html` somewhere over HTTPS (Telegram
 requires it) and put that URL into `WEBAPP_URL`. The included CI workflow
-publishes the `web/` directory to GitHub Pages.
+publishes the `web/` directory to GitHub Pages (including `privacy-policy.html` — use that HTTPS URL in BotFather as the bot’s privacy policy link).
 
 ---
 

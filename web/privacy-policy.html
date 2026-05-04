@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>PingLuma — Privacy policy</title>
+    <style>
+        :root {
+            --bg: #0f0e0c;
+            --surface: #181714;
+            --border: #262420;
+            --text: #f0ebe0;
+            --muted: #706858;
+            --link: #f0a030;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .wrap {
+            max-width: 44rem;
+            margin: 0 auto;
+            padding: 2rem 1.25rem 3rem;
+        }
+        h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem; }
+        .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+        h2 { font-size: 1.1rem; margin: 1.75rem 0 0.5rem; font-weight: 600; }
+        p, li { margin: 0.5rem 0; }
+        ul { padding-left: 1.25rem; }
+        a { color: var(--link); }
+        .box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.1rem;
+            margin: 1.25rem 0;
+        }
+        .fa {
+            direction: rtl;
+            font-family: "Vazirmatn", "Segoe UI", Tahoma, sans-serif;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<div class="wrap">
+    <h1>PingLuma — Privacy policy</h1>
+    <p class="meta">Last updated: 1 May 2026. This page is static and is published with the Web App (e.g. via GitHub Pages).</p>
+
+    <div class="box fa" style="font-size:0.95rem">
+        <strong>خلاصه (فارسی):</strong> بات و داشبورد فقط برای آزمایش دسترسی به چند پیام‌رسان از <b>شبکهٔ خودتان</b> هستند.
+        آزمون‌ها روی دستگاه شما اجرا می‌شوند. اگر نتیجه را به بات بفرستید، فقط همان خلاصهٔ فنی
+        (زمان، کد کشور اگر شناسایی شود، و وضعیت اتصال برای هر پیام‌رسان) به سرور بات می‌رسد.
+        شناسهٔ تلگرام شما در قابلیت «پایش جمعی» فقط به‌صورت <em>هش ناشناس</em> و در حافظهٔ موقت نگه داشته می‌شود.
+    </div>
+
+    <h2>1. Who this applies to</h2>
+    <p>
+        This policy describes the <strong>PingLuma</strong> Telegram bot, its Web App (this site’s
+        <a href="dashboard.html">dashboard</a>), and the open-source software that powers them.
+        If someone else runs their own copy of the bot, they are the <em>data controller</em> for
+        that instance; this text describes the public project’s intended behaviour.
+    </p>
+
+    <h2>2. Telegram</h2>
+    <p>
+        When you interact with a bot, <a href="https://telegram.org/privacy" rel="noopener noreferrer">Telegram’s Privacy Policy</a>
+        applies to Telegram’s processing of your account, messages, and metadata. PingLuma does not
+        replace Telegram’s terms.
+    </p>
+
+    <h2>3. What the bot receives</h2>
+    <p>PingLuma uses the Telegram Bot API in the usual way: it can see updates your client sends to the bot, such as:</p>
+    <ul>
+        <li>Commands and button presses (<code>/start</code>, <code>/help</code>, <code>/list</code>, keyboard actions).</li>
+        <li>The numeric Telegram user id and chat id needed to reply to you (as provided by Telegram to the bot).</li>
+        <li>Optional <strong>Web App data</strong> when you choose to send your measurement summary from the dashboard back to the bot (see below).</li>
+    </ul>
+
+    <h2>4. Web App / dashboard (your device)</h2>
+    <p>
+        The dashboard runs in your browser or in-app WebView. Network checks (such as HTTP requests,
+        DNS lookups, and WebRTC ICE gathering toward messenger infrastructure) are initiated <strong>from your device</strong>
+        to measure reachability from <em>your</em> network. Those probes go to third-party hosts operated by the
+        messengers or their CDNs, under their policies — not to PingLuma’s dashboard files on GitHub Pages.
+    </p>
+    <p>
+        The dashboard does not implement its own user accounts and does not persist your scan results in the page storage
+        beyond normal browser behaviour.
+    </p>
+
+    <h2>5. Sending results to the bot</h2>
+    <p>If you tap the control that sends the outcome to Telegram, a small JSON payload is delivered to the bot, typically including:</p>
+    <ul>
+        <li>A marker that identifies the payload type and a client timestamp.</li>
+        <li>An optional coarse <strong>country code</strong> detected on the client (if available).</li>
+        <li>For each supported messenger: identifiers you already know from the UI, plus boolean outcomes for chat-related reachability
+            and, where applicable, call-related checks — and rough timings where measured.</li>
+    </ul>
+    <p>This payload is used only to render the bot’s reply and optional aggregated reference signals (see below). It is not sold.</p>
+
+    <h2>6. Crowdsourced reference (Iran-side signal)</h2>
+    <p>
+        To improve “works from Iran?” hints, the bot software may accept anonymous aggregate samples from users whose
+        client reports an Iranian network path. Telegram user ids are <strong>never stored in plain form</strong>:
+        they are hashed with a secret key that is generated in memory when the bot process starts.
+        Samples live in <strong>memory only</strong>, expire automatically, and are not written to disk by this feature.
+        Disable or tune this layer via your bot deployment configuration if you self-host.
+    </p>
+
+    <h2>7. Iran reference data (server)</h2>
+    <p>
+        The bot may combine public or configured sources (for example OONI summaries or optional HTTP references) to describe
+        reachability from Iran. Those queries do not include your personal identity as part of the PingLuma design.
+    </p>
+
+    <h2>8. Hosting this page (GitHub Pages or similar)</h2>
+    <p>
+        Static files for the Web App (including this page) are often served via <strong>GitHub Pages</strong> or another HTTPS host.
+        GitHub’s processing of IP addresses, logs, and repository metadata is described in
+        <a href="https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement" rel="noopener noreferrer">GitHub’s privacy statement</a>.
+        This policy does not control GitHub.
+    </p>
+
+    <h2>9. Retention</h2>
+    <p>
+        Telegram retains chat history according to its own rules. Crowdsource aggregates in the bot process are ephemeral.
+        Self-hosted operators should align logging and backups with their own policy.
+    </p>
+
+    <h2>10. Security</h2>
+    <p>
+        Transport uses HTTPS for the Web App. Telegram traffic uses Telegram’s channels. No security measure is perfect;
+        use the official bot and the published Web App URL from a source you trust.
+    </p>
+
+    <h2>11. Children</h2>
+    <p>The service is not directed at children under the age required by your jurisdiction to consent alone.</p>
+
+    <h2>12. Changes</h2>
+    <p>We may update this page; the “Last updated” date at the top will change. Material changes to practices should be reflected here.</p>
+
+    <h2>13. Contact</h2>
+    <p>
+        For the open-source PingLuma project, questions may be opened as <strong>GitHub Issues</strong> on the repository that publishes this site.
+        Replace this paragraph with your organisation’s contact details if you operate a private deployment.
+    </p>
+    <p><a href="dashboard.html">← Back to dashboard</a></p>
+</div>
+</body>
+</html>
