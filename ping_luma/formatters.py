@@ -145,8 +145,6 @@ def format_messenger_info(m: Messenger) -> str:
         f"📝 {reg}",
         f"🔒 پیش‌فرض: {vpn_hint}",
     ]
-    if m.call_notes:
-        lines += ["", f"<i>{m.call_notes}</i>"]
     lines += [
         "",
         "<i>برای بررسی واقعی از شبکه شما، روی دکمه «بررسی از شبکه شما» بزنید.</i>",

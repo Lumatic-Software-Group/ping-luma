@@ -18,7 +18,6 @@ class Messenger:
     expected_call_outside_iran: str = "unknown"
     expected_call_vpn_any: bool = False
     expected_registration_outside_iran: str = "no"
-    call_notes: str = ""
 
     stun_hosts: list[str] = field(default_factory=list)
     turn_host: Optional[str] = None
@@ -38,7 +37,6 @@ MESSENGERS: list[Messenger] = [
         expected_call_outside_iran="yes",
         expected_call_vpn_any=True,
         expected_registration_outside_iran="sms",
-        call_notes="CDN-fronted — calls usually work from outside Iran without VPN",
         stun_hosts=["stun.bale.ai", "tapi.bale.ai"],
         turn_host="turn.bale.ai",
     ),
@@ -55,7 +53,6 @@ MESSENGERS: list[Messenger] = [
         expected_call_outside_iran="vpn",
         expected_call_vpn_any=False,
         expected_registration_outside_iran="no",
-        call_notes="TURN servers on Iranian IPs — only Iranian-exit VPN typically works",
         stun_hosts=["stun.eitaa.com"],
         turn_host="turn.eitaa.com",
     ),
@@ -72,7 +69,6 @@ MESSENGERS: list[Messenger] = [
         expected_call_outside_iran="vpn",
         expected_call_vpn_any=False,
         expected_registration_outside_iran="no",
-        call_notes="Proprietary binary protocol — only Iranian-exit VPN typically works",
         stun_hosts=[],
         turn_host=None,
     ),
@@ -89,7 +85,6 @@ MESSENGERS: list[Messenger] = [
         expected_call_outside_iran="partial",
         expected_call_vpn_any=True,
         expected_registration_outside_iran="sms",
-        call_notes="Intermittent relay coverage — commercial VPN improves reliability",
         stun_hosts=["stun.gap.im"],
         turn_host="turn.gap.im",
     ),
@@ -106,7 +101,6 @@ MESSENGERS: list[Messenger] = [
         expected_call_outside_iran="yes",
         expected_call_vpn_any=True,
         expected_registration_outside_iran="yes",
-        call_notes="International STUN/TURN — typically the best option for calls from abroad",
         stun_hosts=["stun.igap.net", "stun2.igap.net"],
         turn_host="turn.igap.net",
     ),
@@ -123,7 +117,6 @@ MESSENGERS: list[Messenger] = [
         expected_call_outside_iran="no",
         expected_call_vpn_any=False,
         expected_registration_outside_iran="no",
-        call_notes="State IRIB infrastructure — calls unreliable even with Iranian VPN",
         stun_hosts=[],
         turn_host=None,
     ),
