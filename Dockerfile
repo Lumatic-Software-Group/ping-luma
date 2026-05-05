@@ -17,11 +17,11 @@ COPY web/       ./web/
 
 USER pingluma
 
-# Tiny HTTP bind for platform health probes (HF Spaces use 7860; others set PORT).
-ENV PORT=7860
-EXPOSE 7860
+# Many PaaS hosts require EXPOSE + a listening port (Back4app, etc.). The bot
+# starts a tiny HTTP server on PORT (default 8080) for / and /health — see paas_health.
+EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-  CMD python -c "import os,urllib.request; p=os.getenv('PORT','7860'); urllib.request.urlopen(f'http://127.0.0.1:{p}/health', timeout=5)"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+  CMD python -c "import os,urllib.request; p=os.getenv('PORT','8080'); urllib.request.urlopen(f'http://127.0.0.1:{p}/health', timeout=5)"
 
 CMD ["python", "-m", "ping_luma.bot"]
