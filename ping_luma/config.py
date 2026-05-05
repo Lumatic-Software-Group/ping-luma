@@ -35,6 +35,10 @@ WRITE_TIMEOUT: float = _float("WRITE_TIMEOUT", 30)
 # This is the single source of truth for "your network" results.
 WEBAPP_URL: str = os.getenv("WEBAPP_URL", "https://pingluma.app")
 
+# Lumatic sales
+LUMATIC_WA_URL: str = os.getenv("LUMATIC_WA_URL", "https://wa.me/971502659885")
+LUMATIC_TG_URL: str = os.getenv("LUMATIC_TG_URL", "https://t.me/lumaticgroup")
+
 # ─── Iran reference: HTTP override (optional) ─────────────────────────────
 IRAN_REFERENCE_URL: str | None = os.getenv("IRAN_REFERENCE_URL", "") or None
 IRAN_REFERENCE_TOKEN: str | None = (

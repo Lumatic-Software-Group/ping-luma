@@ -33,6 +33,14 @@ from ping_luma.formatters import (
     format_webapp_report,
     get_messenger,
 )
+from ping_luma.marketing import (
+    compose_webapp_reply_html,
+    hook_smart_start_block,
+    should_show_iran_messenger_hook,
+    smart_start_reply_markup,
+    webapp_reply_markup,
+    with_footer,
+)
 from ping_luma.iran_reference import IranReferenceClient
 from ping_luma.messengers import MESSENGERS
 from ping_luma.ooni import OoniClient
@@ -69,6 +77,7 @@ MSG_BAD_PAYLOAD = (
 # See https://core.telegram.org/bots/webapps#initializing-mini-apps (sendData).
 BTN_WEBAPP = "🌐 بررسی از شبکه شما"
 BTN_LIST = "📋 فهرست پیام‌رسان‌ها"
+BTN_SMART_START = "🏗️ شروع هوشمند بیزنس"
 
 
 def _main_reply_kb() -> ReplyKeyboardMarkup:
@@ -76,6 +85,7 @@ def _main_reply_kb() -> ReplyKeyboardMarkup:
         [
             [KeyboardButton(text=BTN_WEBAPP, web_app=WebAppInfo(url=config.WEBAPP_URL))],
             [KeyboardButton(text=BTN_LIST)],
+            [KeyboardButton(text=BTN_SMART_START)],
         ],
         resize_keyboard=True,
     )
@@ -102,7 +112,7 @@ def _back_kb() -> InlineKeyboardMarkup:
 
 async def cmd_start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        MSG_WELCOME,
+        with_footer(MSG_WELCOME, config.LUMATIC_WA_URL, config.LUMATIC_TG_URL),
         parse_mode=ParseMode.HTML,
         reply_markup=_main_reply_kb(),
     )
@@ -114,7 +124,11 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def cmd_list(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        format_messenger_list(),
+        with_footer(
+            format_messenger_list(),
+            config.LUMATIC_WA_URL,
+            config.LUMATIC_TG_URL,
+        ),
         parse_mode=ParseMode.HTML,
         reply_markup=_detail_kb(),
         disable_web_page_preview=True,
@@ -128,7 +142,11 @@ async def on_button(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
 
     if data == "list":
         await query.message.reply_text(
-            format_messenger_list(),
+            with_footer(
+                format_messenger_list(),
+                config.LUMATIC_WA_URL,
+                config.LUMATIC_TG_URL,
+            ),
             parse_mode=ParseMode.HTML,
             reply_markup=_detail_kb(),
             disable_web_page_preview=True,
@@ -138,10 +156,17 @@ async def on_button(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
         messenger_id = data.split(":", 1)[1]
         m = get_messenger(messenger_id)
         if not m:
-            await query.message.reply_text(MSG_UNKNOWN, parse_mode=ParseMode.HTML)
+            await query.message.reply_text(
+                with_footer(MSG_UNKNOWN, config.LUMATIC_WA_URL, config.LUMATIC_TG_URL),
+                parse_mode=ParseMode.HTML,
+            )
             return
         await query.message.reply_text(
-            format_messenger_info(m),
+            with_footer(
+                format_messenger_info(m),
+                config.LUMATIC_WA_URL,
+                config.LUMATIC_TG_URL,
+            ),
             parse_mode=ParseMode.HTML,
             reply_markup=_back_kb(),
             disable_web_page_preview=True,
@@ -149,7 +174,11 @@ async def on_button(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
 
     elif data == "back":
         await query.message.reply_text(
-            MSG_BACK_MENU,
+            with_footer(
+                MSG_BACK_MENU,
+                config.LUMATIC_WA_URL,
+                config.LUMATIC_TG_URL,
+            ),
             parse_mode=ParseMode.HTML,
             reply_markup=_main_reply_kb(),
         )
@@ -162,11 +191,19 @@ async def on_webapp_data(
     try:
         payload = json.loads(raw)
     except (TypeError, ValueError):
-        await update.message.reply_text(MSG_BAD_PAYLOAD, parse_mode=ParseMode.HTML)
+        await update.message.reply_text(
+            with_footer(MSG_BAD_PAYLOAD, config.LUMATIC_WA_URL, config.LUMATIC_TG_URL),
+            parse_mode=ParseMode.HTML,
+            reply_markup=_main_reply_kb(),
+        )
         return
 
     if not isinstance(payload, dict) or payload.get("kind") != "pingluma_result":
-        await update.message.reply_text(MSG_BAD_PAYLOAD, parse_mode=ParseMode.HTML)
+        await update.message.reply_text(
+            with_footer(MSG_BAD_PAYLOAD, config.LUMATIC_WA_URL, config.LUMATIC_TG_URL),
+            parse_mode=ParseMode.HTML,
+            reply_markup=_main_reply_kb(),
+        )
         return
 
     iran_client: IranReferenceClient = ctx.application.bot_data["iran_ref"]
@@ -185,11 +222,31 @@ async def on_webapp_data(
 
     iran_ref = await iran_client.refresh()
 
-    text = format_webapp_report(payload, iran_ref=iran_ref)
+    report = format_webapp_report(payload, iran_ref=iran_ref)
+    text = compose_webapp_reply_html(
+        report,
+        payload,
+        config.LUMATIC_WA_URL,
+        config.LUMATIC_TG_URL,
+    )
+    show_c = should_show_iran_messenger_hook(payload)
     await update.message.reply_text(
         text,
         parse_mode=ParseMode.HTML,
-        reply_markup=_main_reply_kb(),
+        reply_markup=webapp_reply_markup(show_c, config.LUMATIC_WA_URL),
+        disable_web_page_preview=True,
+    )
+
+
+async def cmd_smart_start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        with_footer(
+            hook_smart_start_block(),
+            config.LUMATIC_WA_URL,
+            config.LUMATIC_TG_URL,
+        ),
+        parse_mode=ParseMode.HTML,
+        reply_markup=smart_start_reply_markup(config.LUMATIC_WA_URL),
         disable_web_page_preview=True,
     )
 
@@ -336,6 +393,9 @@ def main() -> None:
     app.add_handler(CommandHandler("list", cmd_list))
     app.add_handler(
         MessageHandler(filters.TEXT & filters.Regex(f"^{BTN_LIST}$"), cmd_list)
+    )
+    app.add_handler(
+        MessageHandler(filters.TEXT & filters.Regex(f"^{BTN_SMART_START}$"), cmd_smart_start)
     )
     app.add_handler(CallbackQueryHandler(on_button))
     app.add_handler(
