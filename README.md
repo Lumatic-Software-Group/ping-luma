@@ -1,12 +1,3 @@
----
-title: PingLuma
-emoji: 🌐
-colorFrom: gray
-colorTo: blue
-sdk: docker
-pinned: false
----
-
 # PingLuma
 
 [![CI](https://github.com/YOUR_ORG/pingluma/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_ORG/pingluma/actions/workflows/ci.yml)
