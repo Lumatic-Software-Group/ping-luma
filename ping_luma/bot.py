@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
+import time
 
 from telegram import (
     InlineKeyboardButton,
@@ -13,7 +15,7 @@ from telegram import (
     WebAppInfo,
 )
 from telegram.constants import ParseMode
-from telegram.error import Conflict
+from telegram.error import Conflict, NetworkError, TimedOut
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -302,24 +304,11 @@ async def _post_shutdown(app: Application) -> None:
         pass
 
 
-def main() -> None:
-    log.info("Starting PingLuma bot")
-    # PaaS probes :PORT (e.g. 8080) over HTTP before the process is "healthy" — bind first.
-    paas_health.start_background()
-    if not config.BOT_TOKEN:
-        raise SystemExit("BOT_TOKEN is not set")
-
-    request_kwargs: dict = dict(
-        connect_timeout=config.CONNECT_TIMEOUT,
-        read_timeout=config.READ_TIMEOUT,
-        write_timeout=config.WRITE_TIMEOUT,
-    )
-    if config.PROXY_URL:
-        request_kwargs["proxy"] = config.PROXY_URL
-        log.info("Using proxy: %s", config.PROXY_URL)
-
-    iran_client = _build_iran_reference()
-
+def _build_telegram_app(
+        iran_client: IranReferenceClient,
+        *,
+        request_kwargs: dict,
+) -> Application:
     app = (
         Application.builder()
         .token(config.BOT_TOKEN)
@@ -342,8 +331,51 @@ def main() -> None:
         MessageHandler(filters.StatusUpdate.WEB_APP_DATA, on_webapp_data)
     )
     app.add_error_handler(_on_error)
+    return app
 
-    app.run_polling(drop_pending_updates=config.DROP_PENDING)
+
+def main() -> None:
+    log.info("Starting PingLuma bot")
+    # PaaS probes :PORT (HF Spaces use 7860; others inject PORT).
+    paas_health.start_background()
+    if not config.BOT_TOKEN:
+        raise SystemExit("BOT_TOKEN is not set")
+
+    request_kwargs: dict = dict(
+        connect_timeout=config.CONNECT_TIMEOUT,
+        read_timeout=config.READ_TIMEOUT,
+        write_timeout=config.WRITE_TIMEOUT,
+    )
+    if config.PROXY_URL:
+        request_kwargs["proxy"] = config.PROXY_URL
+        log.info("Using proxy: %s", config.PROXY_URL)
+
+    iran_client = _build_iran_reference()
+
+    retries = max(1, int(os.getenv("TELEGRAM_STARTUP_RETRIES", "6")))
+    delay_s = max(1.0, float(os.getenv("TELEGRAM_STARTUP_RETRY_DELAY_S", "15")))
+
+    attempt = 0
+    last_err: BaseException | None = None
+    while attempt < retries:
+        attempt += 1
+        app = _build_telegram_app(iran_client, request_kwargs=request_kwargs)
+        try:
+            app.run_polling(drop_pending_updates=config.DROP_PENDING)
+            return
+        except (TimedOut, NetworkError) as exc:
+            last_err = exc
+            log.warning(
+                "Telegram API unreachable (%s/%s): %s",
+                attempt,
+                retries,
+                exc,
+            )
+            if attempt >= retries:
+                break
+            time.sleep(delay_s)
+
+    raise last_err if last_err is not None else RuntimeError("Telegram polling exited")
 
 
 if __name__ == "__main__":

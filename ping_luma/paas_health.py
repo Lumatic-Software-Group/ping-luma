@@ -26,7 +26,7 @@ class _HealthHandler(BaseHTTPRequestHandler):
 
 
 def start_background() -> None:
-    """Listen on PORT (default 8080) so platforms like Back4app can route health checks."""
+    """Listen on PORT (default 8080; Docker image sets 7860 for Hugging Face Spaces)."""
     if os.getenv("PINGLUMA_DISABLE_HTTP_HEALTH", "").lower() in ("1", "true", "yes"):
         return
     raw = os.getenv("PORT", "8080")
