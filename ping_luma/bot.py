@@ -334,6 +334,17 @@ def _build_telegram_app(
     return app
 
 
+def _reset_asyncio_loop() -> None:
+    """Ensure ``run_polling`` does not reuse a closed loop after a failed startup.
+
+    python-telegram-bot's ``run_polling`` closes the asyncio loop when
+    initialization fails (e.g. ``TimedOut`` during ``get_me()``). Calling it
+    again in the same process without replacing the loop raises
+    ``RuntimeError: Event loop is closed``.
+    """
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
+
 def main() -> None:
     log.info("Starting PingLuma bot")
     # PaaS probes :PORT (HF Spaces use 7860; others inject PORT).
@@ -361,6 +372,7 @@ def main() -> None:
         attempt += 1
         app = _build_telegram_app(iran_client, request_kwargs=request_kwargs)
         try:
+            _reset_asyncio_loop()
             app.run_polling(drop_pending_updates=config.DROP_PENDING)
             return
         except (TimedOut, NetworkError) as exc:
