@@ -1,17 +1,16 @@
+from unittest.mock import patch
+
 from ping_luma.marketing import (
     compose_webapp_reply_html,
     hook_connectivity_block,
     hook_crisis_strategy_block,
     hook_smart_start_block,
-    sales_footer_html,
+    pick_marketing_block,
     should_show_iran_messenger_hook,
     smart_start_reply_markup,
     webapp_reply_markup,
-    with_footer,
+    with_sales_footer,
 )
-
-_WA = "https://wa.me/971500000000"
-_TG = "https://t.me/testgroup"
 
 
 def test_should_show_when_iran_messenger_chat_not_ok():
@@ -41,18 +40,12 @@ def test_should_not_show_when_chat_ok_missing():
     assert not should_show_iran_messenger_hook(payload)
 
 
-def test_sales_footer_contains_links_and_trust():
-    html = sales_footer_html(_WA, _TG)
-    assert _WA in html and _TG in html
-    assert "۹۰ روز" in html
-
-
-def test_with_footer_separator_and_sales():
+def test_with_sales_footer_wraps_body():
     body = "<b>x</b>"
-    out = with_footer(body, _WA, _TG)
+    out = with_sales_footer(body)
     assert body in out
-    assert "━━━━━━━━━━━━━━━━━━━" in out
-    assert _WA in out
+    assert "لوماتیک" in out
+    assert "۹۰ روز" in out
 
 
 def test_hooks_contain_headers():
@@ -62,31 +55,46 @@ def test_hooks_contain_headers():
 
 
 def test_webapp_markup_rows_depends_on_connectivity_flag():
-    kb_one = webapp_reply_markup(False, _WA)
-    kb_two = webapp_reply_markup(True, _WA)
+    kb_one = webapp_reply_markup(False)
+    kb_two = webapp_reply_markup(True)
     assert len(kb_one.inline_keyboard) == 1
     assert len(kb_two.inline_keyboard) == 2
 
 
 def test_smart_start_markup_single_row():
-    kb = smart_start_reply_markup(_WA)
+    kb = smart_start_reply_markup()
     assert len(kb.inline_keyboard) == 1
-    assert kb.inline_keyboard[0][0].url.startswith(_WA)
+    assert kb.inline_keyboard[0][0].callback_data == "contact:website"
 
 
-def test_compose_webapp_includes_both_hooks_when_triggered():
+def test_pick_marketing_block_uses_random_choice():
+    with patch("ping_luma.marketing.random.choice", return_value="FIXED"):
+        assert pick_marketing_block() == "FIXED"
+
+
+def test_compose_webapp_includes_report_and_picked_block_only():
     report = "<b>رپ</b>"
     payload = {"results": [{"id": "bale", "chat_ok": False}]}
-    text = compose_webapp_reply_html(report, payload, _WA, _TG)
+    with patch(
+            "ping_luma.marketing.pick_marketing_block",
+            return_value=hook_crisis_strategy_block(),
+    ):
+        text = compose_webapp_reply_html(report, payload)
     assert report in text
-    assert "⚠️" in text
     assert "✨" in text
-    assert _WA in text
-
-
-def test_compose_webapp_skips_connectivity_hook_when_ok():
-    report = "<b>رپ</b>"
-    payload = {"results": [{"id": "bale", "chat_ok": True}]}
-    text = compose_webapp_reply_html(report, payload, _WA, _TG)
     assert "⚠️" not in text
-    assert "✨" in text
+    assert "۹۰ روز" not in text
+
+
+def test_webapp_full_message_wraps_compose_with_sales_footer():
+    report = "<b>رپ</b>"
+    payload = {"results": [{"id": "bale", "chat_ok": False}]}
+    with patch(
+            "ping_luma.marketing.pick_marketing_block",
+            return_value=hook_crisis_strategy_block(),
+    ):
+        body = compose_webapp_reply_html(report, payload)
+        full = with_sales_footer(body)
+    assert "لوماتیک" in full
+    assert "۹۰ روز" in full
+    assert "✨" in full
