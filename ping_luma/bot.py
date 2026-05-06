@@ -35,7 +35,7 @@ from ping_luma.formatters import (
 )
 from ping_luma.marketing import (
     compose_webapp_reply_html,
-    footer_reply_markup,
+    contact_channel_kb,
     hook_smart_start_block,
     should_show_iran_messenger_hook,
     smart_start_reply_markup,
@@ -50,7 +50,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     level=logging.INFO,
 )
-# httpx/httpcore log every request URL at INFO
+# httpx/httpcore log every request url at info
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 log = logging.getLogger("PingLuma")
@@ -73,12 +73,17 @@ MSG_BAD_PAYLOAD = (
     "داده‌ی دریافت‌شده از داشبورد قابل خواندن نبود. لطفاً دوباره تلاش کنید."
 )
 
-# reply keyboard: Telegram.WebApp.sendData
-# from a KeyboardButton(web_app=...)
-# See https://core.telegram.org/bots/webapps#initializing-mini-apps (sendData).
+# see https://core.telegram.org/bots/webapps#initializing-mini-apps (sendData).
 BTN_WEBAPP = "🌐 بررسی از شبکه شما"
 BTN_LIST = "📋 فهرست پیام‌رسان‌ها"
 BTN_SMART_START = "🏗️ شروع هوشمند بیزنس"
+
+_PENDING_CONTACT: dict[int, str] = {}
+_CONTACT_LABELS = {
+    "urgent": "درخواست مشاوره فوری",
+    "strategy": "درخواست استراتژی محتوا و برندینگ",
+    "website": "درخواست مشاوره راه‌اندازی سایت و اپلیکیشن",
+}
 
 
 def _main_reply_kb() -> ReplyKeyboardMarkup:
@@ -112,12 +117,7 @@ def _back_kb() -> InlineKeyboardMarkup:
 
 
 def _webapp_inline_kb(show_connectivity_cta: bool) -> InlineKeyboardMarkup:
-    """Merge scenario CTAs (WhatsApp prefills) with global WA/TG footer buttons."""
-    wa, tg = config.LUMATIC_WA_URL, config.LUMATIC_TG_URL
-    promo = webapp_reply_markup(show_connectivity_cta, wa)
-    foot = footer_reply_markup(wa, tg)
-    rows = list(promo.inline_keyboard) + list(foot.inline_keyboard)
-    return InlineKeyboardMarkup(rows)
+    return webapp_reply_markup(show_connectivity_cta)
 
 
 async def cmd_start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
@@ -127,9 +127,9 @@ async def cmd_start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
         reply_markup=_main_reply_kb(),
     )
     await update.message.reply_text(
-        "📲 <b>تماس مستقیم با تیم لوماتیک:</b>",
+        "<b>برای ارتباط با تیم لوماتیک، پلتفرم مورد نظر را انتخاب کنید</b>",
         parse_mode=ParseMode.HTML,
-        reply_markup=footer_reply_markup(config.LUMATIC_WA_URL, config.LUMATIC_TG_URL),
+        reply_markup=contact_channel_kb(),
     )
 
 
@@ -150,6 +150,7 @@ async def on_button(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
     data = query.data or ""
+    user_id = query.from_user.id
 
     if data == "list":
         await query.message.reply_text(
@@ -171,10 +172,6 @@ async def on_button(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
         await query.message.reply_text(
             format_messenger_info(m),
             parse_mode=ParseMode.HTML,
-            reply_markup=footer_reply_markup(
-                config.LUMATIC_WA_URL,
-                config.LUMATIC_TG_URL,
-            ),
             disable_web_page_preview=True,
         )
 
@@ -183,6 +180,30 @@ async def on_button(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
             MSG_BACK_MENU,
             parse_mode=ParseMode.HTML,
             reply_markup=_main_reply_kb(),
+        )
+
+    elif data.startswith("contact:"):
+        intent = data.split(":", 1)[1]
+        _PENDING_CONTACT[user_id] = intent
+        await query.message.reply_text(
+            "برای ارتباط با تیم لوماتیک، پلتفرم مورد نظر را انتخاب کنید",
+            parse_mode=ParseMode.HTML,
+            reply_markup=contact_channel_kb(),
+        )
+
+    elif data.startswith("channel:"):
+        channel = data.split(":", 1)[1]
+        intent = _PENDING_CONTACT.pop(user_id, None)
+        label = _CONTACT_LABELS.get(intent, "مشاوره")
+        if channel == "wa":
+            url = f"{config.LUMATIC_WA_URL}"
+        else:
+            url = config.LUMATIC_TG_URL
+        await query.message.reply_text(
+            f"برای <b>{label}</b> روی لینک زیر بزنید:\n\n"
+            f'<a href="{url}">شروع مکالمه</a>',
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=False,
         )
 
 
@@ -239,7 +260,7 @@ async def cmd_smart_start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         with_sales_footer(hook_smart_start_block()),
         parse_mode=ParseMode.HTML,
-        reply_markup=smart_start_reply_markup(config.LUMATIC_WA_URL),
+        reply_markup=smart_start_reply_markup(),
         disable_web_page_preview=True,
     )
 
