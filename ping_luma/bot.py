@@ -5,6 +5,7 @@ import json
 import logging
 
 from telegram import (
+    BotCommand,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     KeyboardButton,
@@ -24,7 +25,7 @@ from telegram.ext import (
 )
 from telegram.request import HTTPXRequest
 
-from ping_luma import config, paas_health
+from ping_luma import config, paas_health, usage_log
 from ping_luma.asn import AsnMap
 from ping_luma.crowdsource import CrowdSourceStore
 from ping_luma.formatters import (
@@ -33,6 +34,7 @@ from ping_luma.formatters import (
     format_webapp_report,
     get_messenger,
 )
+from ping_luma.iran_reference import IranReferenceClient
 from ping_luma.marketing import (
     compose_webapp_reply_html,
     contact_channel_kb,
@@ -42,7 +44,6 @@ from ping_luma.marketing import (
     webapp_reply_markup,
     with_sales_footer,
 )
-from ping_luma.iran_reference import IranReferenceClient
 from ping_luma.messengers import MESSENGERS
 from ping_luma.ooni import OoniClient
 
@@ -54,6 +55,30 @@ logging.basicConfig(
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 log = logging.getLogger("PingLuma")
+
+
+def _schedule_stats(
+        user_id: int | None,
+        action: str,
+        detail: str | None = None,
+        telegram_username: str | None = None,
+) -> None:
+    if user_id is None or not usage_log.configured():
+        return
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return
+    loop.create_task(
+        asyncio.to_thread(
+            usage_log.submit,
+            user_id,
+            action,
+            detail,
+            telegram_username,
+        )
+    )
+
 
 MSG_WELCOME = (
     "<b>پینگ‌لوما</b>\n\n"
@@ -121,6 +146,12 @@ def _webapp_inline_kb(show_connectivity_cta: bool) -> InlineKeyboardMarkup:
 
 
 async def cmd_start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
+    u = update.effective_user
+    _schedule_stats(
+        u.id if u else None,
+        "start",
+        telegram_username=u.username if u else None,
+    )
     await update.message.reply_text(
         with_sales_footer(MSG_WELCOME),
         parse_mode=ParseMode.HTML,
@@ -133,11 +164,13 @@ async def cmd_start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    await cmd_start(update, ctx)
-
-
 async def cmd_list(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
+    u = update.effective_user
+    _schedule_stats(
+        u.id if u else None,
+        "list",
+        telegram_username=u.username if u else None,
+    )
     await update.message.reply_text(
         format_messenger_list(),
         parse_mode=ParseMode.HTML,
@@ -151,6 +184,11 @@ async def on_button(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     await query.answer()
     data = query.data or ""
     user_id = query.from_user.id
+    _schedule_stats(
+        user_id,
+        f"callback:{data}"[:2000],
+        telegram_username=query.from_user.username,
+    )
 
     if data == "list":
         await query.message.reply_text(
@@ -248,6 +286,13 @@ async def on_webapp_data(
     report = format_webapp_report(payload, iran_ref=iran_ref)
     text = compose_webapp_reply_html(report, payload)
     show_c = should_show_iran_messenger_hook(payload)
+    u = update.effective_user
+    _schedule_stats(
+        u.id if u else None,
+        "webapp_result",
+        usage_log.webapp_payload_detail(payload),
+        telegram_username=u.username if u else None,
+    )
     await update.message.reply_text(
         text,
         parse_mode=ParseMode.HTML,
@@ -257,6 +302,12 @@ async def on_webapp_data(
 
 
 async def cmd_smart_start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
+    u = update.effective_user
+    _schedule_stats(
+        u.id if u else None,
+        "smart_start",
+        telegram_username=u.username if u else None,
+    )
     await update.message.reply_text(
         with_sales_footer(pick_marketing_block()),
         parse_mode=ParseMode.HTML,
@@ -338,6 +389,20 @@ async def _iran_refresh_loop(app: Application) -> None:
 async def _post_init(app: Application) -> None:
     # polling cannot run while a webhook is set; HTTP 409 Conflict.
     await app.bot.delete_webhook(drop_pending_updates=config.DROP_PENDING)
+    try:
+        await app.bot.set_my_commands([
+            BotCommand("start", "شروع و منوی اصلی"),
+            BotCommand("list", "فهرست پیام‌رسان‌ها"),
+        ])
+    except Exception as exc:
+        log.warning("set_my_commands failed: %s", exc)
+
+    if usage_log.configured():
+        try:
+            await asyncio.to_thread(usage_log.ensure_schema)
+        except Exception as exc:
+            log.warning("usage DB schema init failed: %s", exc)
+
     iran_client: IranReferenceClient = app.bot_data["iran_ref"]
     if not iran_client.configured:
         return
@@ -403,7 +468,6 @@ def main() -> None:
     app.bot_data["iran_ref"] = iran_client
 
     app.add_handler(CommandHandler("start", cmd_start))
-    app.add_handler(CommandHandler("help", cmd_help))
     app.add_handler(CommandHandler("list", cmd_list))
     app.add_handler(
         MessageHandler(filters.TEXT & filters.Regex(f"^{BTN_LIST}$"), cmd_list)
