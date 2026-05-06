@@ -36,7 +36,7 @@ def hook_connectivity_block() -> str:
 def hook_crisis_strategy_block() -> str:
     return (
         "<b>✨ در زمان بحران، معتبر دیده شوید</b>\n\n"
-        "شایعات و نویز در گروه‌ها، اعتماد مشتریان شما را هدف قرار می‌دهند. "
+        "شایعات در گروه‌ها، اعتماد مشتریان شما را هدف قرار می‌دهند. "
         "برای دریافت استراتژی محتوای حرفه‌ای و ضد‌شایعه مجهز به هوش مصنوعی، "
         "با ما در تماس باشید."
     )
@@ -46,8 +46,8 @@ def hook_smart_start_block() -> str:
     return (
         "<b>🏗️ شروع هوشمند بیزنس در دبی</b>\n\n"
         "با کاهش مراجعات حضوری، ویترین آنلاین شما حیاتی است. طراحی سایت و "
-        "اپلیکیشن اقتصادی مجهز به AI با هدف کاهش هزینه‌های استخدام. "
-        "برای مشاهده نمونه‌کارها پیام دهید."
+        "اپلیکیشن اقتصادی مجهز به AI با هدف کاهش هزینه‌های بیزینس شما. "
+        "برای مشاوره با ما در تماس باشید."
     )
 
 
@@ -116,11 +116,11 @@ def pick_marketing_block() -> str:
 
 def compose_webapp_reply_html(
         report_html: str,
+        payload: dict[str, Any] | None = None,
 ) -> str:
     blocks: list[str] = [
         report_html.rstrip(),
         _DIVIDER,
         pick_marketing_block(),
     ]
-    core = "\n\n".join(blocks)
-    return with_sales_footer(core)
+    return "\n\n".join(blocks)
