@@ -111,6 +111,7 @@ def pick_marketing_block() -> str:
         hook_crisis_strategy_block(),
         hook_smart_start_block(),
     ]
+    random.seed()
     return random.choice(options)
 
 

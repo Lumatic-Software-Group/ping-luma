@@ -36,7 +36,7 @@ from ping_luma.formatters import (
 from ping_luma.marketing import (
     compose_webapp_reply_html,
     contact_channel_kb,
-    hook_smart_start_block,
+    pick_marketing_block,
     should_show_iran_messenger_hook,
     smart_start_reply_markup,
     webapp_reply_markup,
@@ -258,7 +258,7 @@ async def on_webapp_data(
 
 async def cmd_smart_start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        with_sales_footer(hook_smart_start_block()),
+        with_sales_footer(pick_marketing_block()),
         parse_mode=ParseMode.HTML,
         reply_markup=smart_start_reply_markup(),
         disable_web_page_preview=True,
