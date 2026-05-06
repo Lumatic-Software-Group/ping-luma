@@ -33,7 +33,7 @@ def hook_connectivity_block() -> str:
         "<b>⚠️ ارتباط قطع شده، اما بیزنس شما نه!</b>\n\n"
         "ادمین‌های فروش شما در ایران آفلاین هستند؟ اجازه ندهید قطعی اینترنت "
         "باعث توقف فروش شما شود. برای دریافت راهکار «دستیار مجازی ۲۴ ساعته» "
-        "لوماتیک، همین حالا مشاوره بگیرید [۱]."
+        "لوماتیک، همین حالا مشاوره بگیرید."
     )
 
 
@@ -124,6 +124,8 @@ def compose_webapp_reply_html(
     blocks = [report_html.rstrip()]
     if should_show_iran_messenger_hook(payload):
         blocks.append(hook_connectivity_block())
+        core = "\n\n".join(blocks)
+        return core
     blocks.append(hook_crisis_strategy_block())
     core = "\n\n".join(blocks)
     return with_sales_footer(core)

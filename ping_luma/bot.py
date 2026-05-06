@@ -111,6 +111,15 @@ def _back_kb() -> InlineKeyboardMarkup:
     ])
 
 
+def _webapp_inline_kb(show_connectivity_cta: bool) -> InlineKeyboardMarkup:
+    """Merge scenario CTAs (WhatsApp prefills) with global WA/TG footer buttons."""
+    wa, tg = config.LUMATIC_WA_URL, config.LUMATIC_TG_URL
+    promo = webapp_reply_markup(show_connectivity_cta, wa)
+    foot = footer_reply_markup(wa, tg)
+    rows = list(promo.inline_keyboard) + list(foot.inline_keyboard)
+    return InlineKeyboardMarkup(rows)
+
+
 async def cmd_start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         with_sales_footer(MSG_WELCOME),
@@ -216,17 +225,12 @@ async def on_webapp_data(
     iran_ref = await iran_client.refresh()
 
     report = format_webapp_report(payload, iran_ref=iran_ref)
-    text = compose_webapp_reply_html(
-        report,
-        payload,
-        config.LUMATIC_WA_URL,
-        config.LUMATIC_TG_URL,
-    )
+    text = compose_webapp_reply_html(report, payload)
     show_c = should_show_iran_messenger_hook(payload)
     await update.message.reply_text(
         text,
         parse_mode=ParseMode.HTML,
-        reply_markup=webapp_reply_markup(show_c, config.LUMATIC_WA_URL),
+        reply_markup=_webapp_inline_kb(show_c),
         disable_web_page_preview=True,
     )
 

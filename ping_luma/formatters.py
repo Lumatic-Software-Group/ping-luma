@@ -76,16 +76,16 @@ def format_webapp_report(
 
     header_parts = ["<b>نتیجه بررسی از شبکه شما</b>"]
     if country:
-        header_parts.append(f"<code>کشور تشخیص داده‌شده: {country}</code>")
+        header_parts.append(f"<i>کشور تشخیص داده‌شده: {country}</i>")
     if iran_ref:
         header_parts.append(
             "<i>مقایسه با مرجع داخل ایران انجام شد.</i>"
         )
     else:
         header_parts.append(
-            "<i>مرجع داخل ایران در دسترس نیست — توصیه‌ها حدسی هستند.</i>"
+            "<i>مرجع داخل ایران در دسترس نیست - توصیه‌ها حدسی هستند.</i>"
         )
-    lines = header_parts + [""]
+    lines = header_parts
 
     for m in MESSENGERS:
         r = _result_for(user_results, m.id)
@@ -100,7 +100,8 @@ def format_webapp_report(
 
         chat_label = CHAT_VERDICT_FA[chat_ok] if r else "❓ تست نشده"
         lines.append(
-            f"<b>{m.name}</b> ({m.name_fa}){lat_str}\n"
+            f"\n"
+            f"<b>{m.name_fa}</b>{lat_str}\n"
             f"  💬 {chat_label}  —  {advice.chat_label_fa}\n"
             f"  📞 {advice.call_label_fa}"
         )
@@ -114,11 +115,6 @@ def format_webapp_report(
                     and r.get("call_ok") is True)
 
     lines += [
-        "",
-        "━━━━━━━━━━━━━━━━━━━",
-        f"💬 پیام: {n_chat_ok}/{n_total} از شبکه شما در دسترس",
-        f"📞 تماس: {n_call_ok}/{n_total} از شبکه شما قابل برقراری",
-        "",
         "<i>این نتیجه فقط بازتاب شبکه شما در همین لحظه است.</i>",
     ]
     return "\n".join(lines)
