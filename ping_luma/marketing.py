@@ -55,18 +55,29 @@ def hook_smart_start_block() -> str:
     )
 
 
-def sales_footer_html(wa_url: str, tg_url: str) -> str:
+def footer_reply_markup(wa_url: str, tg_url: str) -> InlineKeyboardMarkup:
+    """Native CTA buttons shown below every footer message."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("💬 واتساپ", url=wa_url)],
+        [InlineKeyboardButton("📩 تلگرام", url=tg_url)],
+    ])
+
+
+def sales_footer_html() -> str:
     return (
-        "«آینده بیزنس خود را امروز بسازید. برای مشاوره رایگان و دریافت جزئیات "
-        "خدمات، در تلگرام یا واتس‌اپ با ما در ارتباط باشید.»\n\n"
-        f"<a href=\"{wa_url}\">ارتباط در واتس‌اپ (+971&nbsp;50&nbsp;265&nbsp;9885)</a>\n"
-        f"<a href=\"{tg_url}\">ارتباط در تلگرام (lumaticgroup@)</a>\n\n"
-        "✅ شامل ۹۰ روز پشتیبانی رایگان."
+        "🔴 <b>بقاء یا توقف؟</b>\n"
+        "<b>شروع بیزنس در دبی: پرهزینه یا هوشمند؟</b>\n\n"
+        "در شرایطی که خاموشی اینترنت و بحران منطقه، پایداری کسب‌وکارها را "
+        "تهدید می‌کند، راهی هوشمندانه‌تر برای بقا وجود دارد.\n\n"
+        "⚡️ با اتوماسیون هوشمند <b>لوماتیک</b>، وابستگی بیزنس خود را به "
+        "زیرساخت‌های ناپایدار قطع کنید و هزینه‌های خود را در این وضعیت "
+        "سخت مدیریت کنید.\n\n"
+        "🎯 <i>آینده بیزنس خود را، حتی در قلب بحران، امروز بسازید.</i>\n\n"
+        "✅ <b>۹۰ روز پشتیبانی رایگان</b> برای تمام خدمات."
     )
 
-
-def with_footer(body: str, wa_url: str, tg_url: str) -> str:
-    return f"{body.rstrip()}\n\n━━━━━━━━━━━━━━━━━━━\n{sales_footer_html(wa_url, tg_url)}"
+def with_sales_footer(body: str) -> str:
+    return f"{body.rstrip()}\n\n• • • • • • • • • • •\n\n{sales_footer_html()}"
 
 
 def webapp_reply_markup(
@@ -109,12 +120,10 @@ def smart_start_reply_markup(wa_base_url: str) -> InlineKeyboardMarkup:
 def compose_webapp_reply_html(
         report_html: str,
         payload: dict[str, Any],
-        wa_url: str,
-        tg_url: str,
 ) -> str:
     blocks = [report_html.rstrip()]
     if should_show_iran_messenger_hook(payload):
         blocks.append(hook_connectivity_block())
     blocks.append(hook_crisis_strategy_block())
     core = "\n\n".join(blocks)
-    return with_footer(core, wa_url, tg_url)
+    return with_sales_footer(core)

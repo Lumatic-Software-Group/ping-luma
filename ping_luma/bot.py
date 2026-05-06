@@ -35,11 +35,12 @@ from ping_luma.formatters import (
 )
 from ping_luma.marketing import (
     compose_webapp_reply_html,
+    footer_reply_markup,
     hook_smart_start_block,
     should_show_iran_messenger_hook,
     smart_start_reply_markup,
     webapp_reply_markup,
-    with_footer,
+    with_sales_footer,
 )
 from ping_luma.iran_reference import IranReferenceClient
 from ping_luma.messengers import MESSENGERS
@@ -112,9 +113,14 @@ def _back_kb() -> InlineKeyboardMarkup:
 
 async def cmd_start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        with_footer(MSG_WELCOME, config.LUMATIC_WA_URL, config.LUMATIC_TG_URL),
+        with_sales_footer(MSG_WELCOME),
         parse_mode=ParseMode.HTML,
         reply_markup=_main_reply_kb(),
+    )
+    await update.message.reply_text(
+        "📲 <b>تماس مستقیم با تیم لوماتیک:</b>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=footer_reply_markup(config.LUMATIC_WA_URL, config.LUMATIC_TG_URL),
     )
 
 
@@ -124,11 +130,7 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def cmd_list(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        with_footer(
-            format_messenger_list(),
-            config.LUMATIC_WA_URL,
-            config.LUMATIC_TG_URL,
-        ),
+        format_messenger_list(),
         parse_mode=ParseMode.HTML,
         reply_markup=_detail_kb(),
         disable_web_page_preview=True,
@@ -142,11 +144,7 @@ async def on_button(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
 
     if data == "list":
         await query.message.reply_text(
-            with_footer(
-                format_messenger_list(),
-                config.LUMATIC_WA_URL,
-                config.LUMATIC_TG_URL,
-            ),
+            format_messenger_list(),
             parse_mode=ParseMode.HTML,
             reply_markup=_detail_kb(),
             disable_web_page_preview=True,
@@ -157,28 +155,23 @@ async def on_button(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
         m = get_messenger(messenger_id)
         if not m:
             await query.message.reply_text(
-                with_footer(MSG_UNKNOWN, config.LUMATIC_WA_URL, config.LUMATIC_TG_URL),
+                MSG_UNKNOWN,
                 parse_mode=ParseMode.HTML,
             )
             return
         await query.message.reply_text(
-            with_footer(
-                format_messenger_info(m),
+            format_messenger_info(m),
+            parse_mode=ParseMode.HTML,
+            reply_markup=footer_reply_markup(
                 config.LUMATIC_WA_URL,
                 config.LUMATIC_TG_URL,
             ),
-            parse_mode=ParseMode.HTML,
-            reply_markup=_back_kb(),
             disable_web_page_preview=True,
         )
 
     elif data == "back":
         await query.message.reply_text(
-            with_footer(
-                MSG_BACK_MENU,
-                config.LUMATIC_WA_URL,
-                config.LUMATIC_TG_URL,
-            ),
+            MSG_BACK_MENU,
             parse_mode=ParseMode.HTML,
             reply_markup=_main_reply_kb(),
         )
@@ -192,7 +185,7 @@ async def on_webapp_data(
         payload = json.loads(raw)
     except (TypeError, ValueError):
         await update.message.reply_text(
-            with_footer(MSG_BAD_PAYLOAD, config.LUMATIC_WA_URL, config.LUMATIC_TG_URL),
+            with_sales_footer(MSG_BAD_PAYLOAD),
             parse_mode=ParseMode.HTML,
             reply_markup=_main_reply_kb(),
         )
@@ -200,7 +193,7 @@ async def on_webapp_data(
 
     if not isinstance(payload, dict) or payload.get("kind") != "pingluma_result":
         await update.message.reply_text(
-            with_footer(MSG_BAD_PAYLOAD, config.LUMATIC_WA_URL, config.LUMATIC_TG_URL),
+            with_sales_footer(MSG_BAD_PAYLOAD),
             parse_mode=ParseMode.HTML,
             reply_markup=_main_reply_kb(),
         )
@@ -240,11 +233,7 @@ async def on_webapp_data(
 
 async def cmd_smart_start(update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        with_footer(
-            hook_smart_start_block(),
-            config.LUMATIC_WA_URL,
-            config.LUMATIC_TG_URL,
-        ),
+        with_sales_footer(hook_smart_start_block()),
         parse_mode=ParseMode.HTML,
         reply_markup=smart_start_reply_markup(config.LUMATIC_WA_URL),
         disable_web_page_preview=True,
