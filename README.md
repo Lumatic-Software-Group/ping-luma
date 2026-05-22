@@ -40,7 +40,7 @@ device. So a server-side probe answers "can my server reach Bale?" — never
 
 PingLuma routes around this by doing all probing inside the WebApp:
 
-1. The bot (`ping_luma/bot.py`) renders a **🌐 بررسی از شبکه شما** button.
+1. The bot (`ping_luma/bot.py` → `presentation/bot.py`) renders a **🌐 بررسی از شبکه شما** button.
 2. Tapping it opens `web/dashboard.html` inside Telegram's WebView.
 3. The dashboard runs `fetch()`, DNS-over-HTTPS lookups, and a WebRTC
    ICE-candidate gathering session — all from the user's network.
@@ -86,11 +86,11 @@ Per-messenger, for both chat and call dimensions:
 
 Proprietary protocols (Rubika, Soroush+) cannot be probed from a browser,
 so the call dimension falls back to the static prior shipped in
-`ping_luma/messengers.py`. The bot tells the user explicitly when a line
+`ping_luma/domain/messengers.py`. The bot tells the user explicitly when a line
 is a static expectation vs. a measured result.
 
-The full rule lives in `ping_luma/advice.py` and is unit-tested in
-`tests/test_advice.py`.
+The full rule lives in `ping_luma/domain/advice.py` and is unit-tested in
+`tests/domain/test_advice.py`.
 
 ---
 
@@ -101,30 +101,58 @@ ping-luma/
 ├── .github/workflows/ci.yml
 ├── ping_luma/
 │   ├── __init__.py
-│   ├── advice.py            # decide_chat_advice / decide_call_advice
-│   ├── asn.py               # ASN classifier (BGP-based structural verdict)
-│   ├── asn_map.json         # baked host→ASN map (run scripts/refresh_asn_map.py)
-│   ├── bot.py               # Telegram launcher + WebAppData receiver
-│   ├── checker.py           # probing utilities (for an optional Iran-side service)
-│   ├── config.py
-│   ├── crowdsource.py       # in-memory store of real Iranian WebApp samples
-│   ├── formatters.py        # Persian rendering of WebApp results
-│   ├── iran_reference.py    # façade: ASN + OONI + Crowd + HTTP
-│   ├── messengers.py
-│   ├── ooni.py              # OONI Aggregation client (historical IR data)
-│   └── publish_iran_reference.py  # CLI: probe → iran-ref.json
+│   ├── bot.py                    # shim: ``python -m ping_luma.bot``
+│   ├── publish_iran_reference.py # shim: ``python -m ping_luma.publish_iran_reference``
+│   ├── domain/
+│   │   ├── __init__.py
+│   │   ├── messengers.py
+│   │   ├── advice.py
+│   │   └── probe_results.py     # UrlResult … ScanReport
+│   ├── application/
+│   │   ├── __init__.py
+│   │   ├── iran_reference.py    # ASN + OONI + Crowd + HTTP façade
+│   │   └── scanning.py           # run_full_scan, to_iran_reference_payload
+│   ├── infrastructure/
+│   │   ├── __init__.py
+│   │   ├── config.py
+│   │   ├── asn.py
+│   │   ├── asn_map.json          # baked map (refresh_asn_map)
+│   │   ├── ooni.py
+│   │   ├── crowdsource.py
+│   │   ├── usage_log.py
+│   │   ├── paas_health.py
+│   │   └── probe_runner.py      # probe/score implementation
+│   ├── presentation/
+│   │   ├── __init__.py
+│   │   ├── bot.py               # Telegram + WebApp data
+│   │   ├── formatters.py
+│   │   └── marketing.py
+│   └── interfaces/
+│       ├── __init__.py
+│       └── cli/
+│           ├── __init__.py
+│           └── publish_iran_reference.py
 ├── scripts/
 │   └── refresh_asn_map.py   # offline refresh of asn_map.json from bgpview.io
 ├── tests/
-│   ├── test_advice.py
-│   ├── test_asn.py
-│   ├── test_checker.py
-│   ├── test_crowdsource.py
-│   ├── test_formatters.py
-│   ├── test_iran_reference.py
-│   ├── test_messengers.py
-│   ├── test_ooni.py
-│   └── test_publish_iran_reference.py
+│   ├── __init__.py
+│   ├── domain/
+│   │   ├── test_advice.py
+│   │   └── test_messengers.py
+│   ├── application/
+│   │   └── test_iran_reference.py
+│   ├── infrastructure/
+│   │   ├── test_asn.py
+│   │   ├── test_checker.py
+│   │   ├── test_crowdsource.py
+│   │   ├── test_ooni.py
+│   │   └── test_usage_log.py
+│   ├── presentation/
+│   │   ├── test_formatters.py
+│   │   └── test_marketing.py
+│   └── interfaces/
+│       └── cli/
+│           └── test_publish_iran_reference.py
 ├── volunteer-repo/          # template for the Iran-side reference repo
 │   ├── .github/workflows/probe.yml
 │   ├── .gitignore
@@ -140,6 +168,17 @@ ping-luma/
 ├── requirements-dev.txt
 └── README.md
 ```
+
+### Clean architecture layering
+
+| Layer | Location |
+| ----- | -------- |
+| **Domain** | `domain/messengers.py`, `domain/advice.py`, `domain/probe_results.py` |
+| **Application** | `application/iran_reference.py`, `application/scanning.py` |
+| **Infrastructure** | `infrastructure/config.py`, `asn.py`, `asn_map.json`, `ooni.py`, `crowdsource.py`, `usage_log.py`, `paas_health.py`, `probe_runner.py` |
+| **Presentation** | `presentation/bot.py`, `formatters.py`, `marketing.py` |
+| **Interfaces (CLI)** | `interfaces/cli/publish_iran_reference.py` (+ root shim `publish_iran_reference.py` for `-m`) |
+| **Package** | `__init__.py`, entry shim `bot.py` |
 
 ---
 
@@ -228,7 +267,7 @@ where a source is silent, the lower-authority verdict survives.
 | `IRAN_REFERENCE_TOKEN` | *(empty)* | Bearer token sent to that endpoint. |
 | `IRAN_REFERENCE_TIMEOUT_S` | `6` | HTTP timeout for the reference fetch. |
 | `IRAN_REFERENCE_TTL_S` | `21600` | Cache TTL for the merged snapshot, also drives the background refresh cadence. 6 h. |
-| `ASN_MAP_PATH` | `ping_luma/asn_map.json` | Baked map of host→ASN classification. Refresh with the script below. |
+| `ASN_MAP_PATH` | `ping_luma/infrastructure/asn_map.json` | Baked map of host→ASN classification. Refresh with the script below. |
 | `OONI_ENABLED` | `true` | Toggle OONI cross-check. |
 | `OONI_LOOKBACK_DAYS` | `7` | Aggregation window for OONI measurements. |
 | `OONI_TTL_S` | `86400` | Per-host cache TTL (24 h, since OONI updates daily). |
@@ -252,7 +291,7 @@ By BGP rules, only Iranian-resident clients can route to those hosts at
 all — so we already know the call works from Iran without sending any
 packets. This is a deterministic, structural verdict.
 
-The classifier reads `ping_luma/asn_map.json`. Bake it before deploy and
+The classifier reads `ping_luma/infrastructure/asn_map.json`. Bake it before deploy and
 weekly thereafter:
 
 ```bash
@@ -287,7 +326,7 @@ origins. That's the highest-fidelity *measured* signal we have in this
 release.
 
 The bot ingests these samples into a small in-memory store
-(`ping_luma/crowdsource.py`) keyed by hashed user IDs, with a 20-min
+(`ping_luma/infrastructure/crowdsource.py`) keyed by hashed user IDs, with a 20-min
 rolling window and a per-user dedup window. Once `CROWD_MIN_SAMPLES`
 distinct Iranian users have contributed for a given messenger, the
 store emits a verdict and the façade overlays it on top of OONI.
@@ -336,9 +375,10 @@ The publisher itself is shipped as a CLI in this package:
 python -m ping_luma.publish_iran_reference --output iran-ref.json --pretty
 ```
 
-Internally it just calls `ping_luma.checker.run_full_scan()` and
-`ping_luma.checker.to_iran_reference_payload()`, which are also exposed
-if you want to build something custom.
+Internally it calls `ping_luma.application.scanning.run_full_scan()` and
+`ping_luma.application.scanning.to_iran_reference_payload()`, re-exported from
+`ping_luma.publish_iran_reference` for convenience, or import
+`ping_luma.application.scanning` directly if you want to build something custom.
 
 ---
 
@@ -346,7 +386,7 @@ if you want to build something custom.
 
 1. `cp .env.example .env` and fill in `BOT_TOKEN`, `WEBAPP_URL`. Leave
    `OONI_ENABLED=true` and `CROWD_ENABLED=true`.
-2. `python -m scripts.refresh_asn_map` — bakes `ping_luma/asn_map.json`.
+2. `python -m scripts.refresh_asn_map` — bakes `ping_luma/infrastructure/asn_map.json`.
 3. Start the bot. On boot it will log:
    ```
    Iran reference enabled: ASN(N hosts) + OONI(7d lookback) + Crowd(IR, min=3, age=1200s)
