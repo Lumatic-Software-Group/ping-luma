@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+    <title>پینگ‌لوما — بررسی پیام‌رسان‌های ایرانی از شبکه شما</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;900&display=swap"
+          rel="stylesheet"/>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg: #0f0e0c;
+            --surface: #181714;
+            --border: #262420;
+            --amber: #d4871a;
+            --amber-lt: #f0a030;
+            --green: #22a050;
+            --red: #c83030;
+            --warn: #c08010;
+            --muted: #706858;
+            --dim: #a09080;
+            --text: #f0ebe0;
+            --fa: 'Vazirmatn', sans-serif;
+            --radius: 14px;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html { -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background: var(--tg-theme-bg-color, var(--bg));
+            color: var(--tg-theme-text-color, var(--text));
+            font-family: var(--fa);
+            min-height: 100dvh;
+            direction: rtl;
+            overscroll-behavior: none;
+        }
+
+        .page {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 0 1rem env(safe-area-inset-bottom, 1rem);
+        }
+
+        .header {
+            padding: 1.5rem 0 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.4rem;
+        }
+
+        .logo { font-size: 1.55rem; font-weight: 900; letter-spacing: -.02em; line-height: 1; }
+        .logo span { color: var(--amber-lt); }
+        .header-sub { font-size: .68rem; color: var(--muted); text-align: left; }
+        /* Gregorian datetime in English; isolate from page RTL so order stays readable */
+        .header-datetime-ltr {
+            direction: ltr;
+            unicode-bidi: isolate;
+            text-align: left;
+        }
+
+        .scan-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--amber);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
+            font-family: var(--fa);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .55rem;
+            margin-bottom: 1.25rem;
+            transition: background .18s, transform .1s;
+            -webkit-user-select: none;
+        }
+        .scan-btn:active { transform: scale(.97); background: var(--amber-lt); }
+        .scan-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: .65rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 1.25rem;
+            font-size: .8rem;
+            color: var(--dim);
+            min-height: 44px;
+        }
+
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+        .dot.live { background: var(--amber-lt); animation: pulse 1.6s infinite; }
+        .dot.ok { background: var(--green); }
+        .dot.fail { background: var(--red); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .5; transform: scale(1.5); }
+        }
+
+        .country-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .25rem .55rem;
+            border-radius: 5px;
+            background: rgba(58, 127, 240, .1);
+            color: #4a8ff0;
+            font-size: .7rem;
+            font-weight: 600;
+            margin-right: .35rem;
+        }
+
+        .cards { display: flex; flex-direction: column; gap: .7rem; }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: border-color .2s;
+        }
+        .card.ok   { border-color: rgba(34, 160, 80, .3); }
+        .card.warn { border-color: rgba(192, 128, 16, .3); }
+        .card.fail { border-color: rgba(200, 48, 48, .3); }
+
+        .card-top {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            padding: .85rem 1rem;
+        }
+
+        .icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: 900;
+            flex-shrink: 0;
+            color: #fff;
+        }
+        .ic-bale    { background: #1a73c8; }
+        .ic-eitaa   { background: #e06a10; }
+        .ic-rubika  { background: #1a5fd0; }
+        .ic-gap     { background: #18a03a; }
+        .ic-igap    { background: #6220aa; }
+        .ic-soroush { background: #2850c8; }
+
+        .card-info { flex: 1; min-width: 0; }
+        .card-name {
+            font-size: .9rem; font-weight: 700;
+            display: flex; align-items: center; gap: .4rem;
+        }
+        .card-name-fa { font-size: .72rem; color: var(--muted); margin-top: .1rem; }
+
+        .badge {
+            font-size: .62rem; font-weight: 700;
+            padding: .18rem .5rem; border-radius: 5px;
+            white-space: nowrap;
+        }
+        .badge-ok   { background: rgba(34, 160, 80, .15); color: #22a050; }
+        .badge-warn { background: rgba(192, 128, 16, .15); color: #c08010; }
+        .badge-fail { background: rgba(200, 48, 48, .13); color: #c83030; }
+        .badge-idle { background: rgba(112, 104, 88, .15); color: var(--muted); }
+
+        .card-rows {
+            border-top: 1px solid var(--border);
+            padding: .6rem 1rem .75rem;
+            display: flex; flex-direction: column; gap: .45rem;
+        }
+        .row {
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: .78rem;
+        }
+        .row-label { color: var(--muted); }
+        .row-val { font-weight: 600; }
+
+        .tag {
+            display: inline-flex; align-items: center; gap: .28rem;
+            font-size: .72rem; font-weight: 600;
+            padding: .14rem .48rem; border-radius: 5px;
+        }
+        .tag-ok   { background: rgba(34, 160, 80, .13); color: #22a050; }
+        .tag-warn { background: rgba(192, 128, 16, .13); color: #c08010; }
+        .tag-fail { background: rgba(200, 48, 48, .12); color: #c83030; }
+        .tag-blue { background: rgba(58, 127, 240, .12); color: #4a8ff0; }
+        .tag-dim  { background: rgba(112, 104, 88, .12); color: var(--dim); }
+
+        .lat { font-size: .68rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+        .lat.fast { color: var(--green); }
+        .lat.ok   { color: #a0c860; }
+        .lat.slow { color: var(--warn); }
+
+        .summary {
+            margin-top: 1.1rem;
+            padding: .85rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        .sum-item { display: flex; flex-direction: column; gap: .25rem; }
+        .sum-num { font-size: 1.4rem; font-weight: 900; }
+        .sum-lbl { font-size: .65rem; color: var(--muted); }
+        .sum-num.ok { color: var(--green); }
+        .sum-num.warn { color: var(--warn); }
+        .sum-num.fail { color: var(--red); }
+
+        .send-btn {
+            width: 100%;
+            padding: .85rem;
+            margin-top: 1rem;
+            background: transparent;
+            color: var(--amber-lt);
+            border: 1px solid var(--amber);
+            border-radius: var(--radius);
+            font-family: var(--fa);
+            font-size: .9rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: none;
+        }
+        .send-btn:active { background: rgba(212, 135, 26, .12); }
+
+        footer {
+            margin-top: 1.8rem;
+            padding: .9rem 0 1rem;
+            border-top: 1px solid var(--border);
+            font-size: .65rem;
+            color: var(--muted);
+            text-align: center;
+            line-height: 1.7;
+        }
+
+        .spin {
+            display: inline-block;
+            width: 16px; height: 16px;
+            border: 2.5px solid rgba(255, 255, 255, .2);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .5s linear infinite;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #f5f0e8;
+                --surface: #fff;
+                --border: #e0d8cc;
+                --text: #1a1810;
+                --muted: #8a7a68;
+                --dim: #5a4a3a;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+
+    <header class="header">
+        <div class="logo">پینگ<span>لوما</span></div>
+        <div class="header-sub header-datetime-ltr" id="headerDate"></div>
+    </header>
+
+    <button class="scan-btn" id="btnScan" onclick="runScan()">
+        <span id="btnLabel">بررسی همه پیام‌رسان‌ها از شبکه شما</span>
+    </button>
+
+    <div class="status-pill">
+        <div class="dot" id="statusDot"></div>
+        <span id="countryPill" class="country-pill" style="display:none;"></span>
+        <span id="statusText">برای بررسی از شبکه فعلی شما (وای‌فای یا داده موبایل) دکمه بالا را بزنید.</span>
+    </div>
+
+    <div class="cards" id="cards"></div>
+
+    <div class="summary" id="summary" style="display:none;"></div>
+
+    <button class="send-btn" id="btnSend" onclick="sendToBot()">
+        ارسال نتیجه به بات تلگرام
+    </button>
+
+    <footer>
+        نتایج فقط بازتاب‌دهنده وضعیت <b>شبکه شما</b> در همین لحظه هستند.<br>
+        هیچ داده‌ای روی این صفحه ذخیره نمی‌شود.<br>
+        <a href="privacy-policy.html" style="color:var(--muted);font-size:.72rem;margin-top:.65rem;display:inline-block">خط مشی رازداری</a>
+    </footer>
+</div>
+
+<script>
+    'use strict';
+
+    // ---- Telegram WebApp glue --------------------------------------------
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+        tg.ready();
+        tg.expand();
+        if (tg.colorScheme === 'light') {
+            const tp = tg.themeParams || {};
+            document.documentElement.style.setProperty('--bg', tp.bg_color || '#f5f0e8');
+            document.documentElement.style.setProperty('--surface', tp.secondary_bg_color || '#fff');
+            document.documentElement.style.setProperty('--text', tp.text_color || '#1a1810');
+        }
+    }
+
+    // ---- Messenger registry ----------------------------------------------
+    // Mirror of ping_luma/messengers.py — keep in sync.
+    const MESSENGERS = [
+        {
+            id: 'bale', fa: 'بله', en: 'Bale', letter: 'ب', ic: 'ic-bale',
+            urls: ['https://tapi.bale.ai', 'https://web.bale.ai'],
+            dns: ['tapi.bale.ai', 'web.bale.ai', 'cdn.bale.ai'],
+            stun: ['stun:stun.bale.ai:3478', 'stun:tapi.bale.ai:3478'],
+            turn: 'turn:turn.bale.ai:3478?transport=tcp',
+            expectedCallOutside: 'yes', expectedVpnAny: true, expectedReg: 'sms',
+        },
+        {
+            id: 'eitaa', fa: 'ایتا', en: 'Eitaa', letter: 'ا', ic: 'ic-eitaa',
+            urls: ['https://eitaa.com', 'https://api.eitaa.com'],
+            dns: ['eitaa.com', 'api.eitaa.com'],
+            stun: ['stun:stun.eitaa.com:3478'],
+            turn: 'turn:turn.eitaa.com:3478?transport=tcp',
+            expectedCallOutside: 'vpn', expectedVpnAny: false, expectedReg: 'no',
+        },
+        {
+            id: 'rubika', fa: 'روبیکا', en: 'Rubika', letter: 'ر', ic: 'ic-rubika',
+            urls: ['https://rubika.ir', 'https://getapp.rubika.ir'],
+            dns: ['rubika.ir', 'getapp.rubika.ir'],
+            stun: [], turn: null, proprietary: true,
+            expectedCallOutside: 'vpn', expectedVpnAny: false, expectedReg: 'no',
+        },
+        {
+            id: 'gap', fa: 'گپ', en: 'Gap', letter: 'گ', ic: 'ic-gap',
+            urls: ['https://gap.im', 'https://api.gap.im'],
+            dns: ['gap.im', 'api.gap.im'],
+            stun: ['stun:stun.gap.im:3478'],
+            turn: 'turn:turn.gap.im:3478?transport=tcp',
+            expectedCallOutside: 'partial', expectedVpnAny: true, expectedReg: 'sms',
+        },
+        {
+            id: 'igap', fa: 'آی‌گپ', en: 'iGap', letter: 'آ', ic: 'ic-igap',
+            urls: ['https://igap.net', 'https://api.igap.net'],
+            dns: ['igap.net', 'api.igap.net'],
+            stun: ['stun:stun.igap.net:3478', 'stun:stun2.igap.net:3478'],
+            turn: 'turn:turn.igap.net:3478?transport=tcp',
+            expectedCallOutside: 'yes', expectedVpnAny: true, expectedReg: 'yes',
+        },
+        {
+            id: 'soroush', fa: 'سروش‌پلاس', en: 'Soroush+', letter: 'س', ic: 'ic-soroush',
+            urls: ['https://soroushapp.com', 'https://api.soroushapp.com'],
+            dns: ['soroushapp.com', 'api.soroushapp.com'],
+            stun: [], turn: null, proprietary: true,
+            expectedCallOutside: 'no', expectedVpnAny: false, expectedReg: 'no',
+        },
+    ];
+
+    const CHAT_LABEL = { ok: 'در دسترس', warn: 'ناپایدار', fail: 'مسدود', idle: '—' };
+
+    // ---- Probes -----------------------------------------------------------
+
+    // Reachability probe.
+    // NOTE: Without permissive CORS we cannot read the response body or
+    // status, so this only proves the TLS handshake completed. A 451/403
+    // edge response will look identical to a 200. We document this in the
+    // UI footer.
+    async function probeUrl(url, ms = 8000) {
+        const t = performance.now();
+        try {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), ms);
+            await fetch(url, { mode: 'no-cors', signal: ctrl.signal, cache: 'no-store' });
+            clearTimeout(timer);
+            return { ok: true, lat: Math.round(performance.now() - t) };
+        } catch {
+            return { ok: false, lat: null };
+        }
+    }
+
+    // Real DNS probe via DNS-over-HTTPS (Cloudflare 1.1.1.1).
+    // Returns true ONLY when the resolver returns at least one A record.
+    async function probeDns(host, ms = 5000) {
+        try {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), ms);
+            const r = await fetch(
+                `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(host)}&type=A`,
+                { headers: { 'Accept': 'application/dns-json' }, signal: ctrl.signal, cache: 'no-store' },
+            );
+            clearTimeout(timer);
+            if (!r.ok) return false;
+            const j = await r.json();
+            return Array.isArray(j.Answer) && j.Answer.some(a => a.type === 1 /* A */);
+        } catch {
+            return false;
+        }
+    }
+
+    // WebRTC STUN/TURN candidate-gathering probe.
+    // Resolves with:
+    //   { ok: true,  best: 'relay'|'srflx', lat }   when calls likely work
+    //   { ok: false, best: 'host'|null,     lat }   otherwise
+    // Returns null if the messenger has no WebRTC infrastructure (proprietary).
+    async function probeIce(stunUrls, turnUrl, ms = 7000) {
+        if (!stunUrls?.length && !turnUrl) return null;
+        const iceServers = [];
+        for (const u of stunUrls || []) iceServers.push({ urls: u });
+        if (turnUrl) {
+            // No credentials available — most browsers will use the host for
+            // STUN-style candidate gathering even on turn: URLs.
+            iceServers.push({ urls: turnUrl, username: 'pingluma', credential: 'pingluma' });
+        }
+        let pc;
+        try {
+            pc = new RTCPeerConnection({ iceServers });
+        } catch {
+            return null;
+        }
+
+        const t = performance.now();
+        let best = null;
+        const types = new Set();
+
+        return new Promise(resolve => {
+            let done = false;
+            const finish = () => {
+                if (done) return;
+                done = true;
+                clearTimeout(timer);
+                try { pc.close(); } catch {}
+                const ok = best === 'relay' || best === 'srflx';
+                resolve({ ok, best, lat: Math.round(performance.now() - t) });
+            };
+            const timer = setTimeout(finish, ms);
+            pc.onicecandidate = e => {
+                if (!e.candidate) { finish(); return; }
+                const tt = e.candidate.type;
+                types.add(tt);
+                if (tt === 'relay') { best = 'relay'; finish(); return; }
+                if (tt === 'srflx' && best !== 'relay') best = 'srflx';
+                if (tt === 'host' && !best) best = 'host';
+            };
+            pc.onicegatheringstatechange = () => {
+                if (pc.iceGatheringState === 'complete') finish();
+            };
+            pc.createDataChannel('pl');
+            pc.createOffer()
+                .then(o => pc.setLocalDescription(o))
+                .catch(() => finish());
+        });
+    }
+
+    async function detectCountry() {
+        try {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 4000);
+            const r = await fetch('https://www.cloudflare.com/cdn-cgi/trace', {
+                signal: ctrl.signal, cache: 'no-store',
+            });
+            clearTimeout(timer);
+            if (!r.ok) return null;
+            const text = await r.text();
+            const m = text.match(/^loc=([A-Z]{2})$/m);
+            return m ? m[1] : null;
+        } catch {
+            return null;
+        }
+    }
+
+    // Combine reachability + DNS into a chat verdict (ok/warn/fail).
+    async function probeMessenger(m) {
+        const [urlRes, dnsRes, ice] = await Promise.all([
+            Promise.all(m.urls.map(u => probeUrl(u))),
+            Promise.all(m.dns.map(h => probeDns(h))),
+            probeIce(m.stun, m.turn),
+        ]);
+        const okUrls = urlRes.filter(r => r.ok).length;
+        const okDns = dnsRes.filter(Boolean).length;
+        const urlRatio = okUrls / Math.max(m.urls.length, 1);
+        const dnsRatio = okDns / Math.max(m.dns.length, 1);
+        let score = Math.round(urlRatio * 60 + dnsRatio * 30);
+        const lats = urlRes.filter(r => r.ok && r.lat).map(r => r.lat);
+        if (lats.length) {
+            const b = Math.min(...lats);
+            score += b < 500 ? 10 : b < 1200 ? 5 : 0;
+        }
+        score = Math.min(100, score);
+        const chatVerdict = score >= 70 ? 'ok' : score >= 30 ? 'warn' : 'fail';
+
+        return {
+            chatVerdict,
+            chatOk: chatVerdict === 'ok',
+            lat: lats.length ? Math.min(...lats) : null,
+            callOk: ice ? ice.ok : null,
+            callBest: ice ? ice.best : null,
+        };
+    }
+
+    // ---- Rendering --------------------------------------------------------
+
+    function expectedCallTag(m) {
+        const map = {
+            yes:     ['tag-ok',   '✅ معمولاً بدون VPN'],
+            partial: ['tag-warn', '⚠️ معمولاً ناپایدار'],
+            vpn:     ['tag-blue', '🔒 معمولاً VPN ایرانی'],
+            no:      ['tag-fail', '❌ معمولاً مسدود'],
+        };
+        const [cls, txt] = map[m.expectedCallOutside] || ['tag-dim', '❓'];
+        return `<span class="tag ${cls}">${txt}</span>`;
+    }
+
+    function callResultTag(m, callOk, callBest) {
+        if (m.proprietary) {
+            return `<span class="tag tag-dim">قابل تست از مرورگر نیست</span>`;
+        }
+        if (callOk === null) return `<span class="tag tag-dim">—</span>`;
+        if (callOk) {
+            const label = callBest === 'relay' ? 'تماس ممکن (relay)' : 'تماس ممکن';
+            return `<span class="tag tag-ok">✅ ${label}</span>`;
+        }
+        return `<span class="tag tag-fail">❌ تماس مسدود</span>`;
+    }
+
+    function regTag(reg) {
+        const map = {
+            yes: ['tag-ok', '✅ آزاد'],
+            no:  ['tag-fail', '❌ مسدود'],
+            sms: ['tag-blue', '📱 شماره ایرانی'],
+        };
+        const [cls, txt] = map[reg] || ['tag-dim', '❓'];
+        return `<span class="tag ${cls}">${txt}</span>`;
+    }
+
+    function chatBadge(v) {
+        const cls = { ok: 'badge-ok', warn: 'badge-warn', fail: 'badge-fail', idle: 'badge-idle' }[v] || 'badge-idle';
+        return `<span class="badge ${cls}">${CHAT_LABEL[v] || '—'}</span>`;
+    }
+
+    function latClass(ms) {
+        if (!ms) return '';
+        return ms < 400 ? 'fast' : ms < 900 ? 'ok' : 'slow';
+    }
+
+    function renderCard(m, result /* null = loading */) {
+        const v = result ? result.chatVerdict : 'idle';
+        const lat = result?.lat;
+        const latHtml = lat ? `<span class="lat ${latClass(lat)}">${lat}ms</span>` : '';
+        return `
+  <div class="card ${result ? v : ''}" id="card-${m.id}">
+    <div class="card-top">
+      <div class="icon ${m.ic}">${m.letter}</div>
+      <div class="card-info">
+        <div class="card-name">
+          ${m.en} <span style="color:var(--muted);font-weight:400;font-size:.75rem">${m.fa}</span>
+          ${latHtml}
+        </div>
+        <div class="card-name-fa">${result ? '' : '<span class="spin"></span>'}</div>
+      </div>
+      ${chatBadge(v)}
+    </div>
+    ${result ? `
+    <div class="card-rows">
+      <div class="row">
+        <span class="row-label">💬 چت از شبکه شما</span>
+        <span class="row-val">${chatBadge(v)}</span>
+      </div>
+      <div class="row">
+        <span class="row-label">📞 تماس از شبکه شما</span>
+        <span class="row-val">${callResultTag(m, result.callOk, result.callBest)}</span>
+      </div>
+      <div class="row">
+        <span class="row-label">📞 راهنما</span>
+        <span class="row-val">${expectedCallTag(m)}</span>
+      </div>
+      <div class="row">
+        <span class="row-label">📝 ثبت‌نام</span>
+        <span class="row-val">${regTag(m.expectedReg)}</span>
+      </div>
+    </div>` : ''}
+  </div>`;
+    }
+
+    // ---- Orchestration ----------------------------------------------------
+
+    let busy = false;
+    let lastResults = null;
+    let lastCountry = null;
+
+    function setStatus(live, txt) {
+        const dot = document.getElementById('statusDot');
+        dot.className = 'dot' + (live ? ' live' : '');
+        document.getElementById('statusText').textContent = txt;
+    }
+
+    function setCountry(cc) {
+        const el = document.getElementById('countryPill');
+        if (!cc) { el.style.display = 'none'; return; }
+        el.style.display = 'inline-flex';
+        el.textContent = `🌍 کشور: ${cc}`;
+    }
+
+    async function runScan() {
+        if (busy) return;
+        busy = true;
+        tg?.HapticFeedback?.impactOccurred('light');
+
+        const btn = document.getElementById('btnScan');
+        btn.disabled = true;
+        document.getElementById('btnLabel').innerHTML = '<span class="spin"></span> در حال بررسی…';
+        document.getElementById('summary').style.display = 'none';
+        document.getElementById('btnSend').style.display = 'none';
+
+        const cards = document.getElementById('cards');
+        cards.innerHTML = MESSENGERS.map(m => renderCard(m, null)).join('');
+        setStatus(true, `بررسی ${MESSENGERS.length} پیام‌رسان از شبکه شما…`);
+
+        // Country detection runs in parallel with probes.
+        const countryP = detectCountry().then(cc => { lastCountry = cc; setCountry(cc); });
+
+        const results = new Array(MESSENGERS.length).fill(null);
+        await Promise.all(MESSENGERS.map((m, i) =>
+            probeMessenger(m).then(r => {
+                results[i] = r;
+                const el = document.getElementById(`card-${m.id}`);
+                if (el) el.outerHTML = renderCard(m, r);
+            })
+        ));
+        await countryP;
+
+        lastResults = results;
+
+        const nOk = results.filter(r => r?.chatVerdict === 'ok').length;
+        const nWarn = results.filter(r => r?.chatVerdict === 'warn').length;
+        const nFail = results.filter(r => r?.chatVerdict === 'fail').length;
+
+        const summary = document.getElementById('summary');
+        summary.style.display = 'flex';
+        summary.innerHTML = `
+    <div class="sum-item"><div class="sum-num ok">${nOk}</div><div class="sum-lbl">در دسترس</div></div>
+    <div class="sum-item"><div class="sum-num warn">${nWarn}</div><div class="sum-lbl">ناپایدار</div></div>
+    <div class="sum-item"><div class="sum-num fail">${nFail}</div><div class="sum-lbl">مسدود</div></div>
+  `;
+
+        const allOk = nFail === 0 && nWarn === 0;
+        setStatus(false,
+            allOk
+                ? `همه ${nOk} پیام‌رسان از شبکه شما در دسترس هستند ✅`
+                : `${nOk} در دسترس · ${nWarn} ناپایدار · ${nFail} مسدود`,
+        );
+        document.getElementById('statusDot').className = `dot ${allOk ? 'ok' : nFail > 0 ? 'fail' : 'live'}`;
+
+        document.getElementById('btnLabel').textContent = 'بررسی مجدد';
+        btn.disabled = false;
+        busy = false;
+
+        // If we're inside Telegram, automatically forward to the bot AND
+        // show a manual button as a fallback.
+        if (tg) {
+            sendToBot();
+            document.getElementById('btnSend').style.display = 'block';
+        }
+
+        tg?.HapticFeedback?.notificationOccurred(allOk ? 'success' : 'warning');
+    }
+
+    function sendToBot() {
+        const btn = document.getElementById('btnSend');
+        if (!lastResults) {
+            if (btn) btn.textContent = 'ابتدا «بررسی همه پیام‌رسان‌ها» را بزنید';
+            return false;
+        }
+        if (!tg) {
+            if (btn) btn.textContent = 'این صفحه را از داخل تلگرام باز کنید';
+            return false;
+        }
+        if (typeof tg.sendData !== 'function') {
+            tg.showAlert?.('ارسال داده در این حالت پشتیبانی نمی‌شود. از دکمهٔ زیرین تلگرام «بررسی از شبکه شما» داشبورد را باز کنید.');
+            return false;
+        }
+        const payload = {
+            kind: 'pingluma_result',
+            ts: Date.now(),
+            country: lastCountry,
+            results: MESSENGERS.map((m, i) => {
+                const r = lastResults[i];
+                return r ? {
+                    id: m.id,
+                    chat_ok: r.chatOk,
+                    call_ok: r.callOk,
+                    lat: r.lat,
+                } : { id: m.id, chat_ok: false, call_ok: null, lat: null };
+            }),
+        };
+        const raw = JSON.stringify(payload);
+        if (raw.length > 4096) {
+            tg.showAlert?.('حجم نتیجه برای تلگرام زیاد است.');
+            return false;
+        }
+        try {
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'در حال ارسال…';
+            }
+            tg.sendData(raw);
+            if (btn) btn.textContent = 'ارسال شد';
+            setTimeout(() => {
+                try { tg.close(); } catch (_) { /* ignore */ }
+            }, 100);
+            return true;
+        } catch (e) {
+            console.warn('sendData', e);
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'ارسال نتیجه به بات تلگرام';
+            }
+            tg.showAlert?.('خطا در ارسال. دوباره امتحان کنید.');
+            return false;
+        }
+    }
+
+    (function init() {
+        const d = new Date();
+        const datePart = d.toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        });
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        document.getElementById('headerDate').textContent = `${datePart}, ${hh}:${mm}`;
+    })();
+</script>
+</body>
+</html>

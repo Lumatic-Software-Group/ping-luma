@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>خط مشی رازداری — پینگ‌لوما</title>
+    <style>
+        :root {
+            --bg: #0f0e0c;
+            --surface: #181714;
+            --border: #262420;
+            --text: #f0ebe0;
+            --muted: #706858;
+            --link: #f0a030;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .wrap {
+            max-width: 44rem;
+            margin: 0 auto;
+            padding: 2rem 1.25rem 3rem;
+        }
+        h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem; }
+        .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+        h2 { font-size: 1.1rem; margin: 1.75rem 0 0.5rem; font-weight: 600; }
+        p, li { margin: 0.5rem 0; }
+        ul { padding-left: 1.25rem; }
+        a { color: var(--link); }
+        .box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem 1.1rem;
+            margin: 1.25rem 0;
+        }
+        .fa {
+            direction: rtl;
+            font-family: "Vazirmatn", "Segoe UI", Tahoma, sans-serif;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<div class="wrap">
+    <h1>PingLuma — Privacy policy</h1>
+    <p class="meta">Last updated: 6 May 2026</p>
+
+    <div class="box fa" style="font-size:0.95rem">
+        <strong>خلاصه:</strong> پینگ‌لوما برای این است که از <b>شبکهٔ خودتان</b> بفهمید چند پیام‌رسان در دسترس هستند.
+        تست‌ها روی گوشی یا مرورگر شما انجام می‌شود؛ بات فقط همان چیزی را می‌بیند که هر بات تلگرام برای پاسخ‌گویی لازم دارد.
+        اگر نتیجه را به بات بفرستید، یک خلاصهٔ کوچک فنی برای نشان دادن جواب در همان چت استفاده می‌شود.
+    </div>
+
+    <h2>What PingLuma does</h2>
+    <p>
+        PingLuma is a Telegram bot plus a Web App (<a href="dashboard.html">dashboard</a>) that helps you check messenger reachability
+        from <em>your</em> network. It behaves like a normal bot: you tap buttons or send commands, and it replies in the chat.
+    </p>
+
+    <h2>Telegram</h2>
+    <p>
+        <a href="https://telegram.org/privacy" rel="noopener noreferrer">Telegram’s rules</a> apply to your use of Telegram.
+        PingLuma uses the standard Bot API so the service can read what you send to the bot and send messages back to you.
+    </p>
+
+    <h2>The dashboard</h2>
+    <p>
+        The checks (load attempts, DNS, WebRTC) run on <strong>your device</strong>. They talk to messenger sites and related
+        infrastructure so the result reflects your Wi‑Fi or mobile data — not a lab server.
+    </p>
+    <p>
+        If you use “send result to the bot”, a small summary is passed to Telegram so the bot can show a clear answer in Persian.
+        You choose when to send it.
+    </p>
+
+    <h2>Hints for Iran-side reachability</h2>
+    <p>
+        The software may combine public or optional reference data to give friendlier hints (for example when a VPN might help).
+        That logic does not need your messages or your phone number to work.
+    </p>
+    <p>
+        A separate in-memory feature can use anonymised, short-lived technical samples from users on Iranian paths to improve hints —
+        only while the bot is running, not as a permanent profile of you.
+    </p>
+
+    <h2>If someone else runs this bot</h2>
+    <p>
+        PingLuma is open source. Whoever deploys a copy chooses how it is hosted. They might turn on simple usage logging so they
+        can keep the service reliable — the same kind of thing many sites do. The public project source code does not contain
+        whoever’s server passwords or tokens.
+    </p>
+
+    <h2>This webpage</h2>
+    <p>
+        These static files are often served over HTTPS (for example via GitHub). The host’s normal logs may apply —
+        see their privacy policy if you care about that layer.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+        For the open-source project, use <strong>GitHub Issues</strong> on the repo that publishes this site.
+    </p>
+    <p><a href="dashboard.html">← Back to dashboard</a></p>
+</div>
+</body>
+</html>
