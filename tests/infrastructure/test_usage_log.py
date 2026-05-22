@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from unittest import mock
 
-from ping_luma import usage_log
+from ping_luma.infrastructure import usage_log
 
 
 def test_http_base_url() -> None:
@@ -17,12 +17,12 @@ def _ok_results(n: int) -> dict:
 def test_submit_noop_when_unconfigured() -> None:
     with mock.patch.object(usage_log.config, "TURSO_DATABASE_URL", None):
         with mock.patch.object(usage_log.config, "TURSO_AUTH_TOKEN", "t"):
-            with mock.patch("ping_luma.usage_log.httpx.post") as post:
+            with mock.patch("ping_luma.infrastructure.usage_log.httpx.post") as post:
                 usage_log.submit(1, "start")
             post.assert_not_called()
     with mock.patch.object(usage_log.config, "TURSO_DATABASE_URL", "u"):
         with mock.patch.object(usage_log.config, "TURSO_AUTH_TOKEN", None):
-            with mock.patch("ping_luma.usage_log.httpx.post") as post:
+            with mock.patch("ping_luma.infrastructure.usage_log.httpx.post") as post:
                 usage_log.submit(1, "start")
             post.assert_not_called()
 
@@ -35,7 +35,7 @@ def test_ensure_schema_runs_create_if_not_exists_only() -> None:
         with mock.patch.object(usage_log, "_actor_needs_username_column", return_value=False):
             with mock.patch.object(usage_log.config, "TURSO_DATABASE_URL", "libsql://db.example.com"):
                 with mock.patch.object(usage_log.config, "TURSO_AUTH_TOKEN", "tok"):
-                    with mock.patch("ping_luma.usage_log.httpx.post", return_value=mock_resp) as post:
+                    with mock.patch("ping_luma.infrastructure.usage_log.httpx.post", return_value=mock_resp) as post:
                         usage_log.ensure_schema()
     assert post.call_count == 1
     _, kwargs = post.call_args
@@ -74,7 +74,7 @@ def test_ensure_schema_drops_legacy_then_creates() -> None:
         with mock.patch.object(usage_log, "_actor_needs_username_column", return_value=False):
             with mock.patch.object(usage_log.config, "TURSO_DATABASE_URL", "libsql://db.example.com"):
                 with mock.patch.object(usage_log.config, "TURSO_AUTH_TOKEN", "tok"):
-                    with mock.patch("ping_luma.usage_log.httpx.post", side_effect=responses) as post:
+                    with mock.patch("ping_luma.infrastructure.usage_log.httpx.post", side_effect=responses) as post:
                         usage_log.ensure_schema()
     assert post.call_count == 2
     drop_req = post.call_args_list[0][1]["json"]["requests"]
@@ -89,7 +89,7 @@ def test_submit_inserts_only_no_ddl() -> None:
     mock_resp = mock.MagicMock()
     mock_resp.raise_for_status = mock.MagicMock()
     mock_resp.json.return_value = _ok_results(3)
-    with mock.patch("ping_luma.usage_log.httpx.post", return_value=mock_resp) as post:
+    with mock.patch("ping_luma.infrastructure.usage_log.httpx.post", return_value=mock_resp) as post:
         usage_log.submit(8596044462, "start", "d1")
     _, kwargs = post.call_args
     reqs = kwargs["json"]["requests"]
@@ -110,7 +110,7 @@ def test_submit_null_detail() -> None:
     mock_resp = mock.MagicMock()
     mock_resp.raise_for_status = mock.MagicMock()
     mock_resp.json.return_value = _ok_results(3)
-    with mock.patch("ping_luma.usage_log.httpx.post", return_value=mock_resp) as post:
+    with mock.patch("ping_luma.infrastructure.usage_log.httpx.post", return_value=mock_resp) as post:
         usage_log.submit(1, "start", None)
     ins = post.call_args[1]["json"]["requests"][1]["stmt"]
     assert ins["args"][1] == {"type": "null"}
@@ -122,7 +122,7 @@ def test_submit_passes_normalized_username() -> None:
     mock_resp.json.return_value = _ok_results(3)
     with mock.patch.object(usage_log.config, "TURSO_DATABASE_URL", "libsql://db.example.com"):
         with mock.patch.object(usage_log.config, "TURSO_AUTH_TOKEN", "tok"):
-            with mock.patch("ping_luma.usage_log.httpx.post", return_value=mock_resp) as post:
+            with mock.patch("ping_luma.infrastructure.usage_log.httpx.post", return_value=mock_resp) as post:
                 usage_log.submit(1, "start", telegram_username="  @MyBrand  ")
     args = post.call_args[1]["json"]["requests"][0]["stmt"]["args"]
     assert args[1] == {"type": "text", "value": "mybrand"}

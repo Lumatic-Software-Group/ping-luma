@@ -1,5 +1,5 @@
 """Decision-table tests for the VPN advice helper."""
-from ping_luma.advice import (
+from ping_luma.domain.advice import (
     Advice,
     CallAdvice,
     ChatAdvice,
@@ -7,7 +7,7 @@ from ping_luma.advice import (
     decide_call_advice,
     decide_chat_advice,
 )
-from ping_luma.messengers import MESSENGER_BY_ID
+from ping_luma.domain.messengers import MESSENGER_BY_ID
 
 BALE = MESSENGER_BY_ID["bale"]  # webrtc, expected yes
 EITAA = MESSENGER_BY_ID["eitaa"]  # webrtc, expected vpn

@@ -1,10 +1,10 @@
-from ping_luma.formatters import (
+from ping_luma.domain.messengers import MESSENGER_BY_ID, MESSENGERS
+from ping_luma.presentation.formatters import (
     format_messenger_info,
     format_messenger_list,
     format_webapp_report,
     get_messenger,
 )
-from ping_luma.messengers import MESSENGER_BY_ID, MESSENGERS
 
 
 def _payload(overrides=None):

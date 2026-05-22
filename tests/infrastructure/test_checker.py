@@ -5,19 +5,20 @@ These tests do not hit the network — all probes are mocked.
 import struct
 from unittest.mock import patch
 
-from ping_luma.checker import (
+from ping_luma.application.scanning import run_full_scan, to_iran_reference_payload
+from ping_luma.domain.messengers import MESSENGER_BY_ID
+from ping_luma.domain.probe_results import (
     DnsResult,
     StunResult,
     TurnResult,
     UrlResult,
+)
+from ping_luma.infrastructure.probe_runner import (
     _check_one_messenger,
     _is_valid_stun_response,
     _score_calls,
     _score_messaging,
-    run_full_scan,
-    to_iran_reference_payload,
 )
-from ping_luma.messengers import MESSENGER_BY_ID
 
 
 def _url(ok: bool, lat: float = 200.0) -> UrlResult:
@@ -108,10 +109,10 @@ def test_stun_validator_rejects_unknown_message_type():
 
 def test_check_one_messenger_marks_chat_reachable_when_probes_succeed():
     bale = MESSENGER_BY_ID["bale"]
-    with patch("ping_luma.checker._probe_url", return_value=_url(True, 120)), \
-            patch("ping_luma.checker._probe_dns", return_value=_dns(True)), \
-            patch("ping_luma.checker._probe_stun_udp", side_effect=_stun_ok), \
-            patch("ping_luma.checker._probe_turn_tcp", side_effect=_turn_ok):
+    with patch("ping_luma.infrastructure.probe_runner._probe_url", return_value=_url(True, 120)), \
+            patch("ping_luma.infrastructure.probe_runner._probe_dns", return_value=_dns(True)), \
+            patch("ping_luma.infrastructure.probe_runner._probe_stun_udp", side_effect=_stun_ok), \
+            patch("ping_luma.infrastructure.probe_runner._probe_turn_tcp", side_effect=_turn_ok):
         result = _check_one_messenger(bale)
     assert result.messenger.id == "bale"
     assert result.chat_verdict == "REACHABLE"
@@ -121,8 +122,8 @@ def test_check_one_messenger_marks_chat_reachable_when_probes_succeed():
 
 def test_check_one_messenger_call_unknown_for_proprietary():
     rubika = MESSENGER_BY_ID["rubika"]
-    with patch("ping_luma.checker._probe_url", return_value=_url(True, 120)), \
-            patch("ping_luma.checker._probe_dns", return_value=_dns(True)):
+    with patch("ping_luma.infrastructure.probe_runner._probe_url", return_value=_url(True, 120)), \
+            patch("ping_luma.infrastructure.probe_runner._probe_dns", return_value=_dns(True)):
         result = _check_one_messenger(rubika)
     assert result.call_verdict == "UNKNOWN"
     assert result.call_ok is None
@@ -131,10 +132,10 @@ def test_check_one_messenger_call_unknown_for_proprietary():
 # ---------- iran-reference payload ----------------------------------------
 
 def test_to_iran_reference_payload_round_trip():
-    with patch("ping_luma.checker._probe_url", return_value=_url(True, 100)), \
-            patch("ping_luma.checker._probe_dns", return_value=_dns(True)), \
-            patch("ping_luma.checker._probe_stun_udp", side_effect=_stun_ok), \
-            patch("ping_luma.checker._probe_turn_tcp", side_effect=_turn_ok):
+    with patch("ping_luma.infrastructure.probe_runner._probe_url", return_value=_url(True, 100)), \
+            patch("ping_luma.infrastructure.probe_runner._probe_dns", return_value=_dns(True)), \
+            patch("ping_luma.infrastructure.probe_runner._probe_stun_udp", side_effect=_stun_ok), \
+            patch("ping_luma.infrastructure.probe_runner._probe_turn_tcp", side_effect=_turn_ok):
         report = run_full_scan()
     payload = to_iran_reference_payload(report)
     assert "ts" in payload

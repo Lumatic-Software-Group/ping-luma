@@ -49,4 +49,4 @@ asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["ping_luma"]
-omit = ["tests/*"]
+omit = ["tests/**/*"]

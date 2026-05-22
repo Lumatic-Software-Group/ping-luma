@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from ping_luma.asn import AsnMap
-from ping_luma.crowdsource import CrowdSourceStore
-from ping_luma.iran_reference import IranReferenceClient
-from ping_luma.ooni import OoniClient
+from ping_luma.infrastructure.asn import AsnMap
+from ping_luma.infrastructure.crowdsource import CrowdSourceStore
+from ping_luma.infrastructure.ooni import OoniClient
+from ping_luma.application.iran_reference import IranReferenceClient
 
 
 # ---------- helpers ---------------------------------------------------------
@@ -93,7 +93,7 @@ async def test_http_override_wins_over_asn(monkeypatch, tmp_path: Path):
 
         async def get(self, *_a, **_kw): return _OkResp()
 
-    monkeypatch.setattr("ping_luma.iran_reference.httpx.AsyncClient", _OkClient)
+    monkeypatch.setattr("ping_luma.application.iran_reference.httpx.AsyncClient", _OkClient)
 
     client = IranReferenceClient(asn_map=asn_map, http_url="https://override/ref")
     result = await client.refresh()
@@ -113,7 +113,7 @@ async def test_http_failure_is_swallowed(monkeypatch):
         async def get(self, *_a, **_kw):
             raise RuntimeError("network down")
 
-    monkeypatch.setattr("ping_luma.iran_reference.httpx.AsyncClient", _RaisingClient)
+    monkeypatch.setattr("ping_luma.application.iran_reference.httpx.AsyncClient", _RaisingClient)
 
     client = IranReferenceClient(http_url="https://override/ref")
     result = await client.refresh()
@@ -196,7 +196,7 @@ async def test_http_override_wins_over_crowdsource(monkeypatch):
 
         async def get(self, *_a, **_kw): return _OkResp()
 
-    monkeypatch.setattr("ping_luma.iran_reference.httpx.AsyncClient", _OkClient)
+    monkeypatch.setattr("ping_luma.application.iran_reference.httpx.AsyncClient", _OkClient)
 
     client = IranReferenceClient(http_url="https://op/", crowdsource=crowd)
     result = await client.refresh()

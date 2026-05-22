@@ -1,7 +1,7 @@
 """Tests for the OONI aggregation client."""
 import pytest
 
-from ping_luma.ooni import OoniClient
+from ping_luma.infrastructure.ooni import OoniClient
 
 
 # --- helpers ---------------------------------------------------------------
@@ -39,7 +39,7 @@ def _client_with(payload, monkeypatch, *, count=None):
                 count["n"] += 1
             return _Resp(payload)
 
-    monkeypatch.setattr("ping_luma.ooni.httpx.AsyncClient", _MockClient)
+    monkeypatch.setattr("ping_luma.infrastructure.ooni.httpx.AsyncClient", _MockClient)
 
 
 # --- configured / disabled --------------------------------------------------
@@ -126,7 +126,7 @@ async def test_http_error_returns_none_silently(monkeypatch):
         async def get(self, *_a, **_kw):
             raise RuntimeError("network down")
 
-    monkeypatch.setattr("ping_luma.ooni.httpx.AsyncClient", _RaisingClient)
+    monkeypatch.setattr("ping_luma.infrastructure.ooni.httpx.AsyncClient", _RaisingClient)
     c = OoniClient()
     assert await c.is_reachable_from_iran("any.example") is None
 
@@ -157,6 +157,6 @@ async def test_disabled_skips_network(monkeypatch):
         def __init__(self, *_a, **_kw):
             raise AssertionError("OONI must not hit the network when disabled")
 
-    monkeypatch.setattr("ping_luma.ooni.httpx.AsyncClient", _ShouldNotCall)
+    monkeypatch.setattr("ping_luma.infrastructure.ooni.httpx.AsyncClient", _ShouldNotCall)
     c = OoniClient(enabled=False)
     assert await c.is_reachable_from_iran("any.example") is None

@@ -1,7 +1,7 @@
 """Tests for the crowdsource store."""
 import pytest
 
-from ping_luma.crowdsource import CrowdSourceStore
+from ping_luma.infrastructure.crowdsource import CrowdSourceStore
 
 
 @pytest.mark.asyncio

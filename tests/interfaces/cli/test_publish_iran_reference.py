@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from ping_luma import publish_iran_reference as cli
-from ping_luma.checker import MessengerResult, ScanReport
-from ping_luma.messengers import MESSENGERS
+from ping_luma.interfaces.cli import publish_iran_reference as cli
+from ping_luma.domain.messengers import MESSENGERS
+from ping_luma.domain.probe_results import MessengerResult, ScanReport
 
 
 def _fake_report() -> ScanReport:

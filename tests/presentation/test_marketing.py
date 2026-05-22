@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from ping_luma.marketing import (
+from ping_luma.presentation.marketing import (
     compose_webapp_reply_html,
     hook_connectivity_block,
     hook_crisis_strategy_block,
@@ -68,7 +68,7 @@ def test_smart_start_markup_single_row():
 
 
 def test_pick_marketing_block_uses_random_choice():
-    with patch("ping_luma.marketing.random.choice", return_value="FIXED"):
+    with patch("ping_luma.presentation.marketing.random.choice", return_value="FIXED"):
         assert pick_marketing_block() == "FIXED"
 
 
@@ -76,7 +76,7 @@ def test_compose_webapp_includes_report_and_picked_block_only():
     report = "<b>رپ</b>"
     payload = {"results": [{"id": "bale", "chat_ok": False}]}
     with patch(
-            "ping_luma.marketing.pick_marketing_block",
+            "ping_luma.presentation.marketing.pick_marketing_block",
             return_value=hook_crisis_strategy_block(),
     ):
         text = compose_webapp_reply_html(report, payload)
@@ -90,7 +90,7 @@ def test_webapp_full_message_wraps_compose_with_sales_footer():
     report = "<b>رپ</b>"
     payload = {"results": [{"id": "bale", "chat_ok": False}]}
     with patch(
-            "ping_luma.marketing.pick_marketing_block",
+            "ping_luma.presentation.marketing.pick_marketing_block",
             return_value=hook_crisis_strategy_block(),
     ):
         body = compose_webapp_reply_html(report, payload)

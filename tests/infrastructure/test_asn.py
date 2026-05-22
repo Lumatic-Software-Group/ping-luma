@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from ping_luma.asn import (
+from ping_luma.infrastructure.asn import (
     CDN_ASN_NAMES,
     IRAN_ONLY_ASNS,
     AsnMap,

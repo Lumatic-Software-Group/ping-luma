@@ -1,5 +1,5 @@
 """Registry-shape invariants for the messenger list."""
-from ping_luma.messengers import MESSENGER_BY_ID, MESSENGERS
+from ping_luma.domain.messengers import MESSENGER_BY_ID, MESSENGERS
 
 
 def test_six_messengers():
