@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from ping_luma.advice import Advice, decide_advice
-from ping_luma.iran_reference import ResultMap
-from ping_luma.messengers import MESSENGER_BY_ID, MESSENGERS, Messenger
+from ping_luma.application.iran_reference import ResultMap
+from ping_luma.domain.advice import Advice, decide_advice
+from ping_luma.domain.messengers import MESSENGER_BY_ID, MESSENGERS, Messenger
 
 CHAT_VERDICT_FA = {
     True: "✅ در دسترس",

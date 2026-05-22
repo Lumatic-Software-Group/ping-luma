@@ -21,10 +21,10 @@ from urllib.parse import urlparse
 
 import httpx
 
-from ping_luma.asn import AsnMap
-from ping_luma.crowdsource import CrowdSourceStore
-from ping_luma.messengers import MESSENGERS, Messenger
-from ping_luma.ooni import OoniClient
+from ping_luma.domain.messengers import MESSENGERS, Messenger
+from ping_luma.infrastructure.asn import AsnMap
+from ping_luma.infrastructure.crowdsource import CrowdSourceStore
+from ping_luma.infrastructure.ooni import OoniClient
 
 log = logging.getLogger("PingLuma.iran_reference")
 

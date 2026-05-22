@@ -44,7 +44,9 @@ IRAN_REFERENCE_TOKEN: str | None = (
 IRAN_REFERENCE_TIMEOUT_S: float = _float("IRAN_REFERENCE_TIMEOUT_S", 6.0)
 
 # iran reference: asn classifier
-ASN_MAP_PATH: str = os.getenv("ASN_MAP_PATH", "ping_luma/asn_map.json")
+ASN_MAP_PATH: str = os.getenv(
+    "ASN_MAP_PATH", "ping_luma/infrastructure/asn_map.json"
+)
 
 # iran reference: ooni historical censorship data
 OONI_ENABLED: bool = _bool("OONI_ENABLED", True)
@@ -65,7 +67,7 @@ CROWD_MIN_SAMPLES: int = _int("CROWD_MIN_SAMPLES", 3)
 CROWD_SUCCESS_THRESHOLD: float = _float("CROWD_SUCCESS_THRESHOLD", 0.7)
 CROWD_BLOCKED_THRESHOLD: float = _float("CROWD_BLOCKED_THRESHOLD", 0.3)
 
-# cadence of the background refresh loop in ping_luma.bot. 21600s = 6h.
+# cadence of the background refresh loop in ping_luma.presentation.bot. 21600s = 6h.
 IRAN_REFERENCE_TTL_S: int = _int("IRAN_REFERENCE_TTL_S", 21600)
 
 # True  = discard queued updates on startup (recommended during development)

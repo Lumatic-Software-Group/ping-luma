@@ -6,78 +6,15 @@ import struct
 import time
 import urllib.error
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any
 
-from ping_luma.messengers import MESSENGERS, Messenger
-
-
-@dataclass
-class UrlResult:
-    url: str
-    reachable: bool
-    latency_ms: float | None = None
-    status_code: int | None = None
-    ssl_valid: bool = False
-    error: str | None = None
-
-
-@dataclass
-class DnsResult:
-    host: str
-    resolved: bool
-    ip: str | None = None
-    latency_ms: float | None = None
-
-
-@dataclass
-class StunResult:
-    host: str
-    port: int
-    reachable: bool
-    latency_ms: float | None = None
-    error: str | None = None
-
-
-@dataclass
-class TurnResult:
-    host: str
-    port: int
-    reachable: bool
-    latency_ms: float | None = None
-    error: str | None = None
-
-
-@dataclass
-class MessengerResult:
-    messenger: Messenger
-    chat_score: int
-    chat_verdict: str
-    best_latency_ms: float | None = None
-    url_results: list[UrlResult] = field(default_factory=list)
-    dns_results: list[DnsResult] = field(default_factory=list)
-    call_score: int = 0
-    call_verdict: str = "UNKNOWN"
-    stun_results: list[StunResult] = field(default_factory=list)
-    turn_result: TurnResult | None = None
-
-    @property
-    def chat_ok(self) -> bool:
-        return self.chat_verdict == "REACHABLE"
-
-    @property
-    def call_ok(self) -> bool | None:
-        if self.call_verdict == "UNKNOWN":
-            return None
-        return self.call_verdict == "REACHABLE"
-
-
-@dataclass
-class ScanReport:
-    timestamp: str
-    results: list[MessengerResult] = field(default_factory=list)
+from ping_luma.domain.messengers import Messenger
+from ping_luma.domain.probe_results import (
+    DnsResult,
+    MessengerResult,
+    StunResult,
+    TurnResult,
+    UrlResult,
+)
 
 
 def _probe_url(url: str, timeout: int = 8) -> UrlResult:
@@ -270,45 +207,3 @@ def _check_one_messenger(m: Messenger) -> MessengerResult:
         stun_results=stun_results,
         turn_result=turn_result,
     )
-
-
-def run_full_scan(
-        messengers: list[Messenger] | None = None,
-) -> ScanReport:
-    """Probe all messengers concurrently.
-
-    Intended for use by the Iran-side reference service (deployed on an
-    Iranian VPS). Do NOT call this from the bot host as a "user network"
-    answer — it isn't.
-    """
-    targets = messengers or MESSENGERS
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    results: list[MessengerResult | None] = [None] * len(targets)
-
-    with ThreadPoolExecutor(max_workers=len(targets)) as pool:
-        futures = {pool.submit(_check_one_messenger, m): i
-                   for i, m in enumerate(targets)}
-        for future in as_completed(futures):
-            results[futures[future]] = future.result()
-
-    return ScanReport(
-        timestamp=timestamp,
-        results=[r for r in results if r is not None],
-    )
-
-
-def to_iran_reference_payload(report: ScanReport) -> dict[str, Any]:
-    """Serialize a scan report into the Iran-reference HTTP shape.
-
-    Used by the optional Iran-side reference service to expose its results.
-    """
-    return {
-        "ts": report.timestamp,
-        "results": {
-            r.messenger.id: {
-                "chat_ok": r.chat_ok,
-                "call_ok": r.call_ok,
-            }
-            for r in report.results
-        },
-    }

@@ -5,7 +5,7 @@ import logging
 
 import httpx
 
-from ping_luma import config
+from ping_luma.infrastructure import config
 
 log = logging.getLogger(__name__)
 

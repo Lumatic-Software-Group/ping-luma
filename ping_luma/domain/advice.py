@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from ping_luma.messengers import Messenger
+from ping_luma.domain.messengers import Messenger
 
 
 class ChatAdvice(str, Enum):
