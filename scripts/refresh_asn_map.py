@@ -15,8 +15,8 @@ import httpx
 # Allow `python -m scripts.refresh_asn_map` from the repo root.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from ping_luma.asn import classify_from_asn  # noqa: E402
-from ping_luma.messengers import MESSENGERS  # noqa: E402
+from ping_luma.infrastructure.asn import classify_from_asn  # noqa: E402
+from ping_luma.domain.messengers import MESSENGERS  # noqa: E402
 
 log = logging.getLogger("refresh_asn_map")
 
@@ -120,8 +120,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output",
-        default="ping_luma/asn_map.json",
-        help="Path to write the refreshed ASN map (default: ping_luma/asn_map.json)",
+        default="ping_luma/infrastructure/asn_map.json",
+        help="Path to write the refreshed ASN map "
+             "(default: ping_luma/infrastructure/asn_map.json)",
     )
     args = parser.parse_args()
     refresh(Path(args.output))
